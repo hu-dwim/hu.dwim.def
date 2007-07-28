@@ -55,7 +55,8 @@
 	   "Levente Mészáros <levente.meszaros@gmail.com>")
   :licence "BSD / Public domain"
   :description "cl-def - (def function ioe name (arg1) ...)"
-  :depends-on (:alexandria :iterate :metabang-bind)
+  ;; TODO: stefil is needed for (def definer test ...) for now
+  :depends-on (:alexandria :iterate :metabang-bind :stefil)
   :setup-readtable-function "cl-def::setup-readtable"
   :serial t
   :components
@@ -63,21 +64,21 @@
    (:file "duplicates")
    (:file "configuration")
    (:file "def")
-   (:file "definers")))
+   (:file "definer")))
 
-#+nil((defsystem :cl-def.test
+(defsystem :cl-def-test
   :description "Tests for the cl-def test system."
   :depends-on (:cl-def :stefil)
   :components
-  ((:file "tests")))
+  ((:file "test")))
 
 (defmethod perform ((op test-op) (system (eql (find-system :cl-def))))
-  (operate 'load-op :cl-def.test)
-  (in-package :cl-def.test)
+  (operate 'load-op :cl-def-test)
+  (in-package :cl-def-test)
   (declaim (optimize (debug 3)))
   (warn "(declaim (optimize (debug 3))) was issued to help later C-c C-c'ing")
-  (eval (read-from-string "(stefil:funcall-test-with-feedback-message 'cl-def.test:test)"))
+  (eval (read-from-string "(stefil:funcall-test-with-feedback-message 'cl-def-test:test)"))
   (values))
 
 (defmethod operation-done-p ((op test-op) (system (eql (find-system :cl-def))))
-  nil))
+  nil)

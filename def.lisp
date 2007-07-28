@@ -13,22 +13,23 @@
   (warn 'simple-style-warning :format-control message :format-arguments args))
 
 ;; TODO this is not thread-safe, but we don't want to depend on bordeaux-threads
-(defparameter *definers* (make-hash-table))
+(defparameter *definers* (make-hash-table :test 'equal))
 
 (defun find-definer (name &optional (errorp #t))
-  (bind (((values definer found) (gethash name *definers*)))
+  (bind (((values definer found) (gethash (symbol-name name) *definers*)))
     (when (and errorp
                (not found))
       (error "No definer for ~S" name))
     (values definer found)))
 
 (defun (setf find-definer) (value name)
-  (bind ((definer (gethash name *definers*)))
+  (bind ((key (symbol-name name))
+         (definer (gethash key *definers*)))
     (when definer
       (simple-style-warning "Redefining definer ~S" name))
     (if value
-        (setf (gethash name *definers*) value)
-        (remhash name *definers*))))
+        (setf (gethash key *definers*) value)
+        (remhash key *definers*))))
 
 (defclass definer ()
   ((name :initarg :name :accessor name-of)

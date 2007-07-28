@@ -13,7 +13,7 @@
   (enable-sharp-boolean-syntax))
 
 (setup-swank-readtable-alist
- '(:cl-def :cl-def.test) 'setup-readtable)
+ '(:cl-def :cl-def-test) 'setup-readtable)
 
 
 
