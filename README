@@ -1,0 +1,15 @@
+
+You may want to add this to your emacs setup:
+
+(put 'def 'common-lisp-indent-function '(4 4 (&whole 4 &rest 2) &body))
+
+And maybe this to lisp-font-lock-keywords-2
+
+("(\\(def\\)[ 	\n]+(\\([^) 	\n]+\\).*?)[ 	\n(]+\\(.*?\\)[ 	\n)]+"
+ (1 font-lock-keyword-face)
+ (2 font-lock-type-face)
+ (3 font-lock-function-name-face))
+("(\\(def\\)[ 	\n]+\\(.*?\\)[ 	\n(]+\\(.*?\\)[ 	\n)]+"
+ (1 font-lock-keyword-face)
+ (2 font-lock-type-face)
+ (3 font-lock-function-name-face))
