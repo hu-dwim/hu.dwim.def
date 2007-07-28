@@ -41,22 +41,30 @@
   (make-instance 'definer :name name :expander expander))
 
 (defmacro def (&whole whole name &rest rest &environment environment)
-  (declare (ignore rest))
-  (funcall (expander-of (find-definer name)) whole environment))
+  (declare (ignore rest name))
+  (funcall (expander-of (find-definer (parse-definer-name-and-options whole))) whole environment))
+
+(defun parse-definer-name-and-options (whole)
+  (bind ((name-and-options (ensure-list (second whole))))
+    (values (first name-and-options) (rest name-and-options))))
 
 (setf (find-definer 'definer)
       (make-definer 'definer
                     (lambda (-whole- -environment-)
                       (declare (ignorable -environment-))
                       (setf -whole- (copy-seq -whole-))
-                      (bind (((name args &rest body) (nthcdr 2 -whole-))
-                             (expander-forms `(lambda (-whole- -environment-)
-                                               (declare (ignorable -environment-))
-                                               (bind (,@(when args
-                                                          `(,args (nthcdr 2 -whole-))))
-                                                 ,@body))))
-                        ;;(break "~S" expander-forms)
-                        (setf (find-definer name)
-                              (make-definer name (compile nil expander-forms)))
-                        name))))
+                      (bind (((name-and-options args &rest body) (nthcdr 2 -whole-)))
+                        (setf name-and-options (ensure-list name-and-options))
+                        (bind ((name (first name-and-options))
+                               (expander-forms `(lambda (-whole- -environment-)
+                                                 (declare (ignorable -environment-))
+                                                 (bind ((-options- (nth-value 1 (parse-definer-name-and-options -whole-)))
+                                                        ,@(when args
+                                                                `(,args (nthcdr 2 -whole-))))
+                                                   (declare (ignorable -options-))
+                                                   ,@body))))
+                          ;;(break "~S" expander-forms)
+                          (setf (find-definer name)
+                                (make-definer name (compile nil expander-forms)))
+                          expander-forms)))))
 

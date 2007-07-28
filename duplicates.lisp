@@ -71,8 +71,6 @@
     ,@body))
 
 
-;; TODO delme eventually
-#+nil
 (defun concatenate-symbol (&rest args)
   "A DWIM symbol concatenate: Args will be converted to string and be concatenated
 to form the resulting symbol with one exception: when a package is encountered then

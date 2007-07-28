@@ -6,42 +6,55 @@
 
 (in-package :cl-def)
 
+(defun function-definer-option-transformer (name)
+  (awhen (find-symbol "TRANSFORM-FUNCTION-DEFINER-OPTIONS" (symbol-package name))
+    (fdefinition it)))
+
 (def definer function ()
-  (bind ((body (nthcdr 2 -whole-)))
-    (bind ((name (pop body))
-           flags
-           args)
-      (setf flags (pop body))
-      (if (consp flags)
-          (setf args flags
-                flags nil)
-          (setf args (pop body)))
-      (setf flags (string-downcase flags))
-      (flet ((has-flag (flag)
-               (find flag flags :test #'char=)))
-        (bind (((values body declarations documentation) (parse-body body :documentation #t :whole -whole-)))
-          (if (has-flag #\d)
-              (progn
-                (push '(declare (optimize (speed 0) (debug 3))) declarations)
-                (when (has-flag #\o)
-                  (warn "Ignoring 'O'ptimize flag because 'D'ebug was also specified")))
-              (when (has-flag #\o)
-                (push '(declare (optimize (speed 3) (debug 0))) declarations)))
-          `(progn
-            ,(if (has-flag #\i)
-                 `(declaim (inline ,name))
-                 (values))
-            ,(if (has-flag #\e)
-                 `(export ',name)
-                 (values))
-            (defun ,name ,args
-              ,documentation
-              ,@declarations
-              ,@body)))))))
+   (unless (keywordp (first -options-))
+     (iter (for flag :in-vector (string-downcase (pop -options-)))
+           (ecase flag
+             (#\i (push #t -options-)
+                  (push :inline -options-))
+             (#\o (push #t -options-)
+                  (push :optimize -options-))
+             (#\e (push #t -options-)
+                  (push :export -options-))
+             (#\d (push #t -options-)
+                  (push :debug -options-)))))
+   (bind ((body (nthcdr 2 -whole-))
+          (name (pop body))
+          (args (pop body)))
+     (awhen (function-definer-option-transformer name)
+       (setf -options- (funcall it -options-)))
+     (flet ((get-option (option)
+              (getf -options- option)))
+       (bind (((values body declarations documentation) (parse-body body :documentation #t :whole -whole-)))
+         (if (get-option :debug)
+             (progn
+               (push '(declare (optimize (speed 0) (debug 3))) declarations)
+               (when (get-option #\o)
+                 (warn "Ignoring 'O'ptimize flag because 'D'ebug was also specified")))
+             (when (get-option :optimize)
+               (push '(declare (optimize (speed 3) (debug 0))) declarations)))
+         `(progn
+           ,(if (get-option :inline)
+                `(declaim (inline ,name))
+                (values))
+           ,(if (get-option :export)
+                `(export ',name)
+                (values))
+           (defun ,name ,args
+             ,documentation
+             ,@declarations
+             ,@body))))))
 
 #|
 
-(def function foo ioed (bar baz xxx)
+(defun transform-function-definer-options (options)
+  (append (list :inline #t) options))
+
+(def (function ioed :arg 42) foo (bar baz xxx)
   "doc"
   (declare (ignore xxx))
   (+ bar baz))
