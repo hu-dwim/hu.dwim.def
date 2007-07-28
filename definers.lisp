@@ -40,15 +40,15 @@
                  (warn "Ignoring 'O'ptimize flag because 'D'ebug was also specified")))
              (when (get-option :optimize)
                (push '(declare (optimize (speed 3) (debug 0))) declarations)))
+
          `(progn
-           ,(if (get-option :inline)
-                `(declaim (inline ,name))
-                (values))
-           ,(if (get-option :export)
-                `(export ',name)
-                (values))
+           ,@(when (get-option :inline)
+                   `((declaim (inline ,name))))
+           ,@(when (get-option :export)
+                   `((export ',name)))
            (defun ,name ,args
-             ,documentation
+             ,@(when documentation
+                     (list documentation))
              ,@declarations
              ,@body))))))
 
