@@ -56,7 +56,7 @@
                       (bind (((name-and-options args &rest body) (nthcdr 2 -whole-)))
                         (setf name-and-options (ensure-list name-and-options))
                         (with-unique-names (name)
-                          `(eval-when (:compile-toplevel :execute)
+                          `(eval-when (:compile-toplevel :load-toplevel)
                             (bind ((,name ',(first name-and-options)))
                               ;;(break "~S" expander-forms)
                               (setf (find-definer ,name)
