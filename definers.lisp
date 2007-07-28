@@ -7,7 +7,10 @@
 (in-package :cl-def)
 
 (defun function-definer-option-transformer (name)
-  (awhen (find-symbol "TRANSFORM-FUNCTION-DEFINER-OPTIONS" (symbol-package name))
+  (awhen (find-symbol "TRANSFORM-FUNCTION-DEFINER-OPTIONS"
+                      (symbol-package (if (consp name)
+                                          (second name)
+                                          name)))
     (fdefinition it)))
 
 (def definer function ()

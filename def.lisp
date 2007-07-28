@@ -13,7 +13,7 @@
   (warn 'simple-style-warning :format-control message :format-arguments args))
 
 ;; TODO this is not thread-safe, but we don't want to depend on bordeaux-threads
-(defparameter *definers* (make-hash-table :test 'eql))
+(defparameter *definers* (make-hash-table))
 
 (defun find-definer (name &optional (errorp #t))
   (bind (((values definer found) (gethash name *definers*)))
