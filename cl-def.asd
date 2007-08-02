@@ -64,7 +64,7 @@
    (:file "duplicates")
    (:file "configuration")
    (:file "def")
-   (:file "definer")))
+   (:file "definers")))
 
 (defsystem :cl-def-test
   :description "Tests for the cl-def test system."
