@@ -59,10 +59,6 @@
 (def definer method ()
   (function-like-definer 'defmethod -whole- -environment- -options-))
 
-;; TODO: stefil dependency
-(def definer test ()
-  (function-like-definer 'stefil:deftest -whole- -environment- -options-))
-
 (def definer constant ()
   (bind ((name (third -whole-))
          (value (fourth -whole-))

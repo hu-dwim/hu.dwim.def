@@ -6,8 +6,17 @@
 
 (in-package :cl-user)
 
+;;; try to load asdf-system-connections
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (unless (asdf:find-system :asdf-system-connections nil)
+    (when (find-package :asdf-install)
+      (eval (read-from-string "(asdf-install:install '#:asdf-system-connections)")))
+    (unless (asdf:find-system :asdf-system-connections nil)
+      (error "The defclass-star system requires asdf-system-connections. See http://www.cliki.net/asdf-system-connections for details and download instructions.")))
+  (asdf:operate 'asdf:load-op :asdf-system-connections))
+
 (defpackage #:cl-def.system
-  (:use :cl :asdf)
+    (:use :cl :asdf :asdf-system-connections)
 
   (:shadow
    ;; bah, i don't want to give them new names...
@@ -65,6 +74,11 @@
    (:file "configuration")
    (:file "def")
    (:file "definers")))
+
+(defsystem-connection cl-def-and-stefil
+  :requires (:cl-def :stefil)
+  :components ((:module :integration
+                        :components ((:file "stefil")))))
 
 (defsystem :cl-def-test
   :description "Tests for the cl-def test system."
