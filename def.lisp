@@ -43,7 +43,8 @@
 
 (defmacro def (&whole whole name &rest rest &environment environment)
   (declare (ignore rest name))
-  (funcall (expander-of (find-definer (parse-definer-name-and-options whole))) whole environment))
+  (bind ((definer (find-definer (parse-definer-name-and-options whole))))
+    (funcall (expander-of definer) definer whole environment)))
 
 (defun parse-definer-name-and-options (whole)
   (bind ((name-and-options (ensure-list (second whole))))
@@ -51,8 +52,8 @@
 
 (setf (find-definer 'definer)
       (make-definer 'definer
-                    (lambda (-whole- -environment-)
-                      (declare (ignorable -environment-))
+                    (lambda (-definer- -whole- -environment-)
+                      (declare (ignorable -definer- -environment-))
                       (setf -whole- (copy-seq -whole-))
                       (bind (((name-and-options args &rest body) (nthcdr 2 -whole-)))
                         (setf name-and-options (ensure-list name-and-options))
@@ -61,8 +62,8 @@
                             (bind ((,name ',(first name-and-options)))
                               ;;(break "~S" expander-forms)
                               (setf (find-definer ,name)
-                                    (make-definer ,name (lambda (-whole- -environment-)
-                                                          (declare (ignorable -environment-))
+                                    (make-definer ,name (lambda (-definer- -whole- -environment-)
+                                                          (declare (ignorable -definer- -environment-))
                                                           (bind ((-options- (nth-value 1 (parse-definer-name-and-options -whole-)))
                                                                  ,@(when args
                                                                          `(,args (nthcdr 2 -whole-))))
