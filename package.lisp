@@ -13,6 +13,11 @@
   (:export
    #:def
    #:definer
-   #:find-definer))
+   #:find-definer
+   
+   #:-whole-
+   #:-environment-
+   #:-definer-
+   #:-options-))
 
 

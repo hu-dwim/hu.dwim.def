@@ -13,22 +13,8 @@
                                           name)))
     (fdefinition it)))
 
-(defun function-like-definer (-definer- def-macro-name -whole- -environment- -options- &optional (available-flags "ioed"))
-  (declare (ignore -environment-))
-  (when (and (not (keywordp (first -options-)))
-             (not (null -options-)))
-    (iter (for flag :in-vector (string-downcase (pop -options-)))
-          (if (member flag (coerce available-flags 'list) :test #'char=)
-              (ecase flag
-                (#\i (push #t -options-)
-                     (push :inline -options-))
-                (#\o (push #t -options-)
-                     (push :optimize -options-))
-                (#\e (push #t -options-)
-                     (push :export -options-))
-                (#\d (push #t -options-)
-                     (push :debug -options-)))
-              (error "Flag '~A' is not available for definer ~S" flag (name-of -definer-)))))
+(defun function-like-definer (-definer- def-macro-name -whole- -environment- -options-)
+  (declare (ignore -environment- -definer-))
   (bind ((body (nthcdr 2 -whole-))
          (name (pop body))
          (args (pop body)))
@@ -56,31 +42,35 @@
             ,@declarations
             ,@body))))))
 
-(def definer function ()
+(def (definer e :available-flags "ioed") function ()
   (function-like-definer -definer- 'defun -whole- -environment- -options-))
 
-(def definer method ()
+(def (definer e :available-flags "eod") method ()
   (function-like-definer -definer- 'defmethod -whole- -environment- -options-))
 
-(def definer macro ()
-  (function-like-definer -definer- 'defmacro -whole- -environment- -options- "e"))
+(def (definer e :available-flags "eod") macro ()
+  (function-like-definer -definer- 'defmacro -whole- -environment- -options-))
 
-(def definer constant ()
-  (bind ((name (third -whole-))
-         (value (fourth -whole-))
-         (documentation (fifth -whole-)))
-    `(defconstant ,name
-      ,@(when (> (length -whole-) 3)
-              (list value))
-      ,@(when documentation
-              (list documentation)))))
+(def (definer e :available-flags "e") constant (name value &optional documentation)
+  `(defconstant ,name
+    ,@(when (> (length -whole-) 3)
+            (list value))
+    ,@(when documentation
+            (list documentation))))
 
-(def definer variable ()
-  (bind ((name (third -whole-))
-         (value (fourth -whole-))
-         (documentation (fifth -whole-)))
+(def (definer e :available-flags "e") variable (name &optional value documentation)
+  (with-standard-definer-options name
     `(defvar ,name
       ,@(when (> (length -whole-) 3)
               (list value))
       ,@(when documentation
               (list documentation)))))
+
+(def (definer e) constructor (class-name* &body body)
+  (let ((key-args (when (listp class-name*)
+                    (rest class-name*)))
+        (class-name (if (listp class-name*)
+                        (first class-name*)
+                        class-name*)))
+    `(defmethod initialize-instance :after ((,(intern "SELF") ,class-name) &key ,@key-args &allow-other-keys)
+      ,@body)))
