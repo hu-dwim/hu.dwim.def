@@ -51,12 +51,43 @@
 (def (definer e :available-flags "eod") macro ()
   (function-like-definer -definer- 'defmacro -whole- -environment- -options-))
 
-(def (definer e :available-flags "e") constant (name value &optional documentation)
-  `(defconstant ,name
-    ,@(when (> (length -whole-) 3)
-            (list value))
-    ,@(when documentation
-            (list documentation))))
+(defun extract-function-name (spec)
+  "Useful for macros that want to emulate the functional interface for functions
+like #'eq and 'eq."
+  (if (and (consp spec)
+           (member (first spec) '(quote function)))
+      (second spec)
+      spec))
+
+(def (definer e :available-flags "e") constant (name initial-value &optional documentation)
+  "Use like: (def (constant e :test #'string=) alma \"korte\")"
+  (check-type name symbol)
+  (bind ((test (getf -options- :test 'eq)))
+    (setf test (extract-function-name test))
+    (with-standard-definer-options name
+      `(defconstant ,name
+        (let ((new ,initial-value))
+          (if (boundp ',name)
+              (let ((old (symbol-value ',name)))
+                (cond
+                  ((constantp ',name)
+                   (cond
+                     ((,test old new)
+                      old)
+                     (t
+                      (cerror "Try to redefine the constant."
+                              "~@<~S is an already defined constant whose value ~
+                               ~S is not equal to the provided initial value ~S ~
+                               under ~S.~:@>" ',name old new ',test)
+                      new)))
+                  (t
+                   (cerror "Try to redefine the variable as a constant."
+                           "~@<~S is an already bound non-constant variable ~
+                            whose value is ~S.~:@>" ',name old)
+                   new)))
+              new))
+        ,@(when documentation
+                (list documentation))))))
 
 (def (definer e :available-flags "e") variable (name &optional value documentation)
   (with-standard-definer-options name
