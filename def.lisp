@@ -34,6 +34,7 @@
 (defclass definer ()
   ((name :initarg :name :accessor name-of)
    (expander :initarg :expander :accessor expander-of)
+   (documentation :initarg :documentation :accessor documentation-of)
    (available-flags :initform nil :initarg :available-flags :accessor available-flags-of)))
 
 (defprint-object (self definer :identity #f :type #f)
@@ -85,7 +86,8 @@
           (declare (ignorable -definer- -environment-))
           (setf -whole- (copy-seq -whole-))
           (bind (((name-and-options args &rest body) (nthcdr 2 -whole-))
-                 ((values nil options) (parse-definer-name-and-options -whole- definer-definer)))
+                 ((values nil options) (parse-definer-name-and-options -whole- definer-definer))
+                 ((values body declarations doc-string) (parse-body body :documentation #t :whole -whole-)))
             (setf name-and-options (ensure-list name-and-options))
             (with-unique-names (name)
               `(eval-when (:compile-toplevel :load-toplevel)
@@ -103,7 +105,9 @@
                                                ,@(when args
                                                        `((,(substitute '&rest '&body args) (nthcdr 2 -whole-)))))
                                           (declare (ignorable -options-))
+                                          ,@declarations
                                           ,@body))
+                                      :documentation ,doc-string
                                       ,@options))))))))
   (setf (find-definer 'definer) definer-definer))
 
