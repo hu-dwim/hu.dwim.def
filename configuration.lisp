@@ -10,7 +10,8 @@
 ;;; they are in a standalone file.
 
 (defun setup-readtable ()
-  (enable-sharp-boolean-syntax))
+  (enable-sharp-boolean-syntax)
+  (values))
 
 (setup-swank-readtable-alist
  '(:cl-def :cl-def-test) 'setup-readtable)

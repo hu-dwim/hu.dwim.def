@@ -80,6 +80,11 @@
   :components ((:module :integration
                         :components ((:file "stefil")))))
 
+(defsystem-connection cl-def-and-slime
+  :requires (:cl-def :swank)
+  :components ((:module :integration
+                        :components ((:file "slime")))))
+
 (defsystem :cl-def-test
   :description "Tests for the cl-def test system."
   :depends-on (:cl-def :stefil)
