@@ -106,26 +106,26 @@ like #'eq and 'eq."
     `(defmethod initialize-instance :after ((,(intern "SELF") ,class-name) &key ,@key-args &allow-other-keys)
       ,@body)))
 
-(def (definer e) print-object ((self-variable-name class-name &key (identity t) (type t) with-package
-                                                   (muffle-errors t))
-                               &body body)
+(def (definer e) print-object (class-name* &body body)
   "Define a PRINT-OBJECT method using PRINT-UNREADABLE-OBJECT.
   An example:
-  (def print-object (self parenscript-dispatcher)
+  (def print-object parenscript-dispatcher ; could be (parenscript-dispatcher :identity nil)
     (when (cachep self)
       (princ \"cached\")
       (princ \" \"))
     (princ (parenscript-file self)))"
   (with-unique-names (stream printing)
-    `(defmethod print-object ((,self-variable-name ,class-name) ,stream)
-      (print-unreadable-object (,self-variable-name ,stream :type ,type :identity ,identity)
-        (let ((*standard-output* ,stream))
-          (block ,printing
-            (,@(if muffle-errors
-                   `(handler-bind ((error (lambda (error)
-                                            (declare (ignore error))
-                                            (write-string "<<error printing object>>")
-                                            (return-from ,printing)))))
-                   `(progn))
-               (let (,@(when with-package `((*package* ,(find-package with-package)))))
-                 ,@body))))))))
+    (bind ((args (ensure-list class-name*))
+           ((class-name &key (identity t) (type t) with-package (muffle-errors t)) args))
+      `(defmethod print-object ((,(intern "SELF") ,class-name) ,stream)
+        (print-unreadable-object (,(intern "SELF") ,stream :type ,type :identity ,identity)
+          (let ((*standard-output* ,stream))
+            (block ,printing
+              (,@(if muffle-errors
+                     `(handler-bind ((error (lambda (error)
+                                              (declare (ignore error))
+                                              (write-string "<<error printing object>>")
+                                              (return-from ,printing)))))
+                     `(progn))
+                 (let (,@(when with-package `((*package* ,(find-package with-package)))))
+                   ,@body)))))))))
