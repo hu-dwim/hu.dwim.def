@@ -89,13 +89,17 @@ like #'eq and 'eq."
         ,@(when documentation
                 (list documentation))))))
 
-(def (definer e :available-flags "e") variable (name &optional value documentation)
-  (with-standard-definer-options name
-    `(defvar ,name
-      ,@(when (> (length -whole-) 3)
-              (list value))
-      ,@(when documentation
-              (list documentation)))))
+(def (definer e :available-flags "e") special-variable (name &optional value documentation)
+  "Uses defvar/defparameter based on whether a value was provided or not, and accepts :documentation definer parameter for value-less defvars."
+  (assert (xor documentation (getf -options- :documentation)) () "Multiple documentations for ~S" -whole-)
+  (setf documentation (or documentation (getf -options- :documentation)))
+  (bind ((has-value-p (> (length -whole-) 3)))
+    (with-standard-definer-options name
+      `(progn
+        (setf (documentation ',name 'variable) ,documentation)
+        (,(if has-value-p 'defparameter 'defvar)
+         ,name
+         ,@(when has-value-p (list value)))))))
 
 (def (definer e) constructor (class-name* &body body)
   (let ((key-args (when (listp class-name*)
