@@ -65,7 +65,7 @@
   :licence "BSD / Public domain"
   :description "cl-def - (def function ioe name (arg1) ...)"
   ;; TODO: stefil is needed for (def definer test ...) for now
-  :depends-on (:alexandria :iterate :metabang-bind :stefil)
+  :depends-on (:alexandria :iterate :metabang-bind)
   :setup-readtable-function "cl-def::setup-readtable"
   :serial t
   :components

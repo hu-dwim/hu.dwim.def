@@ -7,5 +7,5 @@
 (in-package :cl-def)
 
 (def definer test ()
-  (function-like-definer 'stefil:deftest -whole- -environment- -options-))
+  (function-like-definer -definer- 'stefil:deftest -whole- -environment- -options-))
 
