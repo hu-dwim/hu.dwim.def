@@ -41,7 +41,7 @@
   (format t "definer ~S" (name-of self)))
 
 (defmethod initialize-instance :after ((self definer) &key &allow-other-keys)
-  (setf (available-flags-of self) (coerce (available-flags-of self) 'list)))
+  (setf (available-flags-of self) (coerce (string-downcase (available-flags-of self)) 'list)))
 
 (defun make-definer (name expander &rest initargs)
   (apply #'make-instance 'definer :name name :expander expander initargs))
@@ -75,9 +75,9 @@
 (defmacro with-standard-definer-options (name &body body)
   ``(progn
     ,@(when (getf -options- :inline)
-       `((declaim (inline ,',name))))
+       `((declaim (inline ,,name))))
     ,@(when (getf -options- :export)
-       `((export ',name)))
+       `((export ',,name)))
     ,,@body))
 
 (bind ((definer-definer (make-definer 'definer nil :available-flags "e")))

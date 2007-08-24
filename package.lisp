@@ -14,6 +14,7 @@
    #:def
    #:definer
    #:find-definer
+   #:with-standard-definer-options
    
    #:-whole-
    #:-environment-
