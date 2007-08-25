@@ -13,9 +13,6 @@
   (enable-sharp-boolean-syntax)
   (values))
 
+#+#.(cl:when (cl:find-package "SWANK") '(:and))
 (setup-swank-readtable-alist
  '(:cl-def :cl-def-test) 'setup-readtable)
-
-
-
-

@@ -9,6 +9,7 @@
 ;;; THE CONTENT OF THIS FILE IS COPIED OVER FROM SOME OTHER LIBRARIES TO DECREASE DEPENDENCIES
 
 ;; dwim utils
+#+#.(cl:when (cl:find-package "SWANK") '(:and))
 (defun setup-swank-readtable-alist (&rest package-name/readtable-setup-function-pairs)
   (loop for (package-names setup-function) :on package-name/readtable-setup-function-pairs :by #'cddr do
         (bind ((*readtable* (copy-readtable)))
