@@ -93,14 +93,14 @@ like #'eq and 'eq."
   "Uses defvar/defparameter based on whether a value was provided or not, and accepts :documentation definer parameter for value-less defvars."
   (assert (not (and documentation (getf -options- :documentation))) () "Multiple documentations for ~S" -whole-)
   (setf documentation (or documentation (getf -options- :documentation)))
-  (bind ((has-value-p (> (length -whole-) 3)))
+  (bind ((has-value? (> (length -whole-) 3)))
     (with-standard-definer-options name
       `(progn
         ,@(when documentation
             `(setf (documentation ',name 'variable) ,documentation))
-        (,(if has-value-p 'defparameter 'defvar)
+        (,(if has-value? 'defparameter 'defvar)
          ,name
-         ,@(when has-value-p (list value)))))))
+         ,@(when has-value? (list value)))))))
 
 (def (definer e) constructor (class-name* &body body)
   (let ((key-args (when (listp class-name*)

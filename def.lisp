@@ -6,11 +6,8 @@
 
 (in-package :cl-def)
 
-(define-condition simple-style-warning (style-warning simple-warning)
-  ())
-
-(defun simple-style-warning (message &rest args)
-  (warn 'simple-style-warning :format-control message :format-arguments args))
+(defun warn-redefining-definer (name)
+  (simple-style-warning "Redefining definer ~S" name))
 
 ;; TODO this is not thread-safe, but we don't want to depend on bordeaux-threads
 (defparameter *definers* (make-hash-table :test 'equal))
@@ -22,11 +19,15 @@
       (error "No definer for ~S" name))
     (values definer found)))
 
-(defun (setf find-definer) (value name)
+(defun (setf find-definer) (value name &key (if-exists :warn))
+  (check-type if-exists (member :warn :replace))
   (bind ((key (symbol-name name))
          (definer (gethash key *definers*)))
-    (when definer
-      (simple-style-warning "Redefining definer ~S" name))
+    (when (and value
+               definer
+               (eq if-exists :warn)
+               (not (defined-at-compile-time? definer)))
+      (warn-redefining-definer name))
     (if value
         (setf (gethash key *definers*) value)
         (remhash key *definers*))))
@@ -35,7 +36,8 @@
   ((name :initarg :name :accessor name-of)
    (expander :initarg :expander :accessor expander-of)
    (documentation :initarg :documentation :accessor documentation-of)
-   (available-flags :initform nil :initarg :available-flags :accessor available-flags-of)))
+   (available-flags :initform nil :initarg :available-flags :accessor available-flags-of)
+   (defined-at-compile-time :initform nil :type boolean :accessor defined-at-compile-time?)))
 
 (defprint-object (self definer :identity #f :type #f)
   (format t "definer ~S" (name-of self)))
@@ -90,24 +92,27 @@
                  ((values body declarations doc-string) (parse-body body :documentation #t :whole -whole-)))
             (setf name-and-options (ensure-list name-and-options))
             (with-unique-names (name)
-              `(eval-when (:compile-toplevel :load-toplevel)
-                (bind ((,name ',(first name-and-options)))
-                  ;;(break "~S" expander-forms)
-                  ,@(when (getf options :export)
-                      (remove-from-plistf options :export)
-                      `((export ,name)))
-                  (setf (find-definer ,name)
-                        (make-definer ,name
-                                      (lambda (-definer- -whole- -environment-)
-                                        (declare (ignorable -definer- -environment-))
-                                        (bind ((-options- (nth-value 1 (parse-definer-name-and-options
-                                                                        -whole- -definer-)))
-                                               ,@(when args
-                                                       `((,(substitute '&rest '&body args) (nthcdr 2 -whole-)))))
-                                          (declare (ignorable -options-))
-                                          ,@declarations
-                                          ,@body))
-                                      :documentation ,doc-string
-                                      ,@options))))))))
+              `(progn
+                (eval-when (:compile-toplevel :load-toplevel)
+                  (bind ((,name ',(first name-and-options)))
+                    ;;(break "~S" expander-forms)
+                    ,@(when (getf options :export)
+                            (remove-from-plistf options :export)
+                            `((export ,name)))
+                    (setf (find-definer ,name)
+                          (make-definer ,name
+                                        (lambda (-definer- -whole- -environment-)
+                                          (declare (ignorable -definer- -environment-))
+                                          (bind ((-options- (nth-value 1 (parse-definer-name-and-options
+                                                                          -whole- -definer-)))
+                                                 ,@(when args
+                                                         `((,(substitute '&rest '&body args) (nthcdr 2 -whole-)))))
+                                            (declare (ignorable -options-))
+                                            ,@declarations
+                                            ,@body))
+                                        :documentation ,doc-string
+                                        ,@options))))
+                (eval-when (:compile-toplevel)
+                  (setf (defined-at-compile-time? (find-definer ',(first name-and-options))) t)))))))
   (setf (find-definer 'definer) definer-definer))
 
