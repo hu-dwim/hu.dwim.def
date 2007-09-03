@@ -97,7 +97,7 @@ like #'eq and 'eq."
     (with-standard-definer-options name
       `(progn
         ,@(when documentation
-            `(setf (documentation ',name 'variable) ,documentation))
+            `((setf (documentation ',name 'variable) ,documentation)))
         (,(if has-value? 'defparameter 'defvar)
          ,name
          ,@(when has-value? (list value)))))))
