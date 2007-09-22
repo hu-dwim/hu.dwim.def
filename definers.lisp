@@ -108,7 +108,7 @@ like #'eq and 'eq."
         (class-name (if (listp class-name*)
                         (first class-name*)
                         class-name*)))
-    `(defmethod initialize-instance :after ((,(intern "SELF") ,class-name) &key ,@key-args &allow-other-keys)
+    `(defmethod initialize-instance :after ((,(intern "SELF") ,class-name) &key ,@key-args)
       ,@body)))
 
 (def (definer e) print-object (class-name* &body body)
