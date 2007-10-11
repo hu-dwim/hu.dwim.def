@@ -9,6 +9,7 @@
 ;;; THE CONTENT OF THIS FILE IS COPIED OVER FROM SOME OTHER LIBRARIES TO DECREASE DEPENDENCIES
 
 ;; dwim utils
+(eval-when (:compile-toplevel :load-toplevel :execute)
 #+#.(cl:when (cl:find-package "SWANK") '(:and))
 (defun setup-swank-readtable-alist (&rest package-name/readtable-setup-function-pairs)
   (loop for (package-names setup-function) :on package-name/readtable-setup-function-pairs :by #'cddr do
@@ -39,6 +40,10 @@
    (lambda (s c n)
      (declare (ignore s c n))
      nil)))
+
+(enable-sharp-boolean-syntax)
+
+) ;; eval-when
 
 (defmacro if-bind (var test &body then/else)
   (assert (first then/else)
