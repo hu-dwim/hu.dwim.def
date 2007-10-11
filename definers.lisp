@@ -151,3 +151,17 @@ like #'eq and 'eq."
                ,@,with-body)
              ,,@(lambda-list-to-funcall-list args)))))))
 
+(def (definer e :available-flags "e") with/without (name)
+  (bind ((variable-name (concatenate-symbol "*" name "*"))
+         (with-macro-name (concatenate-symbol "with-" name))
+         (without-macro-name (concatenate-symbol "without-" name)))
+    `(progn
+       ,@(when (getf -options- :export)
+               `((export '(,variable-name ,with-macro-name ,without-macro-name))))
+       (defvar ,variable-name)
+       (defmacro ,with-macro-name (&body forms)
+         `(let ((,',variable-name #t))
+            ,@forms))
+       (defmacro ,without-macro-name (&body forms)
+         `(let ((,',variable-name #f))
+            ,@forms)))))
