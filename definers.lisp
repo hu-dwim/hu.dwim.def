@@ -134,3 +134,20 @@ like #'eq and 'eq."
                      `(progn))
                  (let (,@(when with-package `((*package* ,(find-package with-package)))))
                    ,@body)))))))))
+
+(def (definer e) with-macro (name args &body body)
+  "(def with-macro with-foo (arg1 arg2 &key alma)
+     (let ((*zyz* 42))
+       (do something)
+       -body-))"
+  (bind ((call-funcion-name (concatenate-symbol *package* "call-" name)))
+    (with-unique-names (trunk with-body)
+      `(progn
+         (defun ,call-funcion-name (,trunk ,@args)
+           ,@(tree-substitute `(funcall ,trunk) '-body- body))
+         (defmacro ,name (,@args &body ,with-body)
+           `(,,call-funcion-name
+             (lambda ()
+               ,@,with-body)
+             ,,@(lambda-list-to-funcall-list args)))))))
+

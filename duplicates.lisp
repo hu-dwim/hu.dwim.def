@@ -118,3 +118,59 @@ be interned into the current package at the time of calling."
             for symbol-name in bindings
             collect (list symbol-name symbol-name))
      ,@body))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; lambda list processing from stefil
+
+(defmacro with-lambda-parsing ((lambda-form &key finally) &body body)
+  (with-unique-names (cell)
+    `(iter
+      (with -in-keywords- = #f)
+      (with -in-optionals- = #f)
+      (with -rest-variable-name- = nil)
+      (for ,cell :first ,lambda-form :then (cdr ,cell))
+      (while ,cell)
+      (for -variable-name- = (if (or -in-optionals-
+                                     -in-keywords-)
+                                 (first (ensure-list (car ,cell)))
+                                 (car ,cell)))
+      (for -default-value- = (if (or -in-optionals-
+                                     -in-keywords-)
+                                 (second (ensure-list (car ,cell)))
+                                 (car ,cell)))
+      (case -variable-name-
+        (&optional (setf -in-optionals- #t))
+        (&key (setf -in-keywords- #t)
+              (setf -in-optionals- #f))
+        (&allow-other-keys)
+        (&rest (setf -rest-variable-name- (car (cdr ,cell)))
+               (setf ,cell (cdr ,cell)))
+        (t ,@body))
+      (finally ,@finally))))
+
+(defun lambda-list-to-funcall-list (args)
+  (with-lambda-parsing (args :finally ((return (values result -rest-variable-name-))))
+    (if -in-keywords-
+        (progn
+          (collect (intern (symbol-name (first (ensure-list -variable-name-)))
+                           #.(find-package "KEYWORD")) :into result)
+          (collect -variable-name- :into result))
+        (collect -variable-name- :into result))))
+
+;; from dwim-utils
+(defun tree-substitute (new old list
+                        &key from-end (test #'eql) (test-not nil)
+                        (end nil) (count nil) (key nil) (start 0))
+  "Starting from LIST non-destructively replaces OLD with NEW."
+  (if (consp list)
+      (prog1-bind result
+          (setf list (substitute new old list :from-end from-end :test test :test-not test-not
+                                 :end end :count count :key key :start start))
+        (iter (for node :first result :then (cdr node))
+              (until (null node))
+              (for el = (car node))
+              (setf (car node) (tree-substitute new old el :from-end from-end :test test :test-not test-not
+                                                :end end :count count :key key :start start))))
+      (if (funcall test list old)
+          new
+          list)))
