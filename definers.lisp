@@ -146,7 +146,7 @@ like #'eq and 'eq."
          (defun ,call-funcion-name (,trunk ,@args)
            ,@(tree-substitute `(funcall ,trunk) '-body- body))
          (defmacro ,name (,@args &body ,with-body)
-           `(,,call-funcion-name
+           `(,',call-funcion-name
              (lambda ()
                ,@,with-body)
              ,,@(lambda-list-to-funcall-list args)))))))
