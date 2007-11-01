@@ -70,6 +70,13 @@ like #'eq and 'eq."
        ,slots
        ,@options)))
 
+(def (definer :available-flags "eas") condition (name supers slots &rest options)
+  "See the CLASS definer."
+  (with-class-definer-options name slots
+    `(define-condition ,name ,supers
+       ,slots
+       ,@options)))
+
 (def (definer e :available-flags "e") constant (name initial-value &optional documentation)
   "Use like: (def (constant e :test #'string=) alma \"korte\")"
   (check-type name symbol)
