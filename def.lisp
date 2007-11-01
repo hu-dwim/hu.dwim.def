@@ -63,14 +63,24 @@
       (iter (for flag :in-vector (string-downcase (pop options)))
             (if (member flag (available-flags-of definer) :test #'char=)
                 (ecase flag
-                  (#\i (push #t options)
-                       (push :inline options))
-                  (#\o (push #t options)
-                       (push :optimize options))
-                  (#\e (push #t options)
-                       (push :export options))
-                  (#\d (push #t options)
-                       (push :debug options)))
+                  (#\i
+                   (push #t options)
+                   (push :inline options))
+                  (#\o
+                   (push #t options)
+                   (push :optimize options))
+                  (#\e
+                   (push #t options)
+                   (push :export options))
+                  (#\d
+                   (push #t options)
+                   (push :debug options))
+                  (#\a
+                   (push #t options)
+                   (push :export-accessor-names options))
+                  (#\s
+                   (push #t options)
+                   (push :export-slot-names options)))
                 (error "Flag '~A' is not available for definer ~S" flag (name-of definer)))))
     (values name options)))
 
@@ -80,6 +90,23 @@
        `((declaim (inline ,,name))))
     ,@(when (getf -options- :export)
        `((export ',,name)))
+    ,,@body))
+
+(defmacro with-class-definer-options (name slots &body body)
+  ``(progn
+    ,@(when (getf -options- :export)
+       `((export ',,name)))
+    ,@(when (getf -options- :export-slot-names)
+       `((export ',(mapcar #'first ,slots))))
+    ,@(when (getf -options- :export-accessor-names)
+       `((export ',(iter (for slot :in slots)
+                         (for slot-options = (rest slot))
+                         (awhen (getf slot-options :accessor)
+                           (collect it))
+                         (awhen (getf slot-options :reader)
+                           (collect it))
+                         (awhen (getf slot-options :writer)
+                           (collect it))))))
     ,,@body))
 
 (bind ((definer-definer (make-definer 'definer nil :available-flags "e")))

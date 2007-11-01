@@ -59,6 +59,17 @@ like #'eq and 'eq."
       (second spec)
       spec))
 
+(def (definer :available-flags "eas") class (name supers slots &rest options)
+  "Example that exports all the class name and all the readers, writers and slot names:
+    (def (class eas) foo \(bar baz)
+     \(\(slot1 :reader readerr)
+      \(slot2 :writer writerr :accessor accessorr))
+     \(:metaclass fofofo))"
+  (with-class-definer-options name slots
+    `(defclass ,name ,supers
+       ,slots
+       ,@options)))
+
 (def (definer e :available-flags "e") constant (name initial-value &optional documentation)
   "Use like: (def (constant e :test #'string=) alma \"korte\")"
   (check-type name symbol)
