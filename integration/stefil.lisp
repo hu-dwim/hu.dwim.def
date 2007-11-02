@@ -6,6 +6,9 @@
 
 (in-package :cl-def)
 
-(def definer test ()
+;; we define "test" with a string, so it will match (def test ...) no matter which package 'test is in.
+;; this is done like that to be able to write (def any-package::test some-lib::test ...) in any
+;; library to create the toplevel test (a defun) called some-lib::test.
+(def definer "test" ()
   (function-like-definer -definer- 'stefil:deftest -whole- -environment- -options-))
 

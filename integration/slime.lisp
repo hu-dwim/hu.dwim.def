@@ -9,7 +9,7 @@
 #.(setup-readtable)
 
 (defun definer-lookup-hook (form)
-  (when (symbolp form)
+  (when (typep form 'definer-name)
     (awhen (find-definer form #f)
       (values it #t))))
 

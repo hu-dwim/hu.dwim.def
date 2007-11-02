@@ -9,28 +9,39 @@
 (defun warn-redefining-definer (name)
   (simple-style-warning "Redefining definer ~S" name))
 
+(deftype definer-name ()
+  `(or string
+       (and symbol
+            (not (eql t))
+            (not null))))
+
 ;; TODO this is not thread-safe, but we don't want to depend on bordeaux-threads
-(defparameter *definers* (make-hash-table :test 'equal))
+(defparameter *definers* (make-hash-table :test #'equal))
 
 (defun find-definer (name &optional (errorp #t))
-  (bind (((values definer found) (gethash (symbol-name name) *definers*)))
+  (check-type name definer-name)
+  (bind (((values definer found) (gethash name *definers*)))
+    (unless found
+      ;; try once again as a string, so you can (def definer "foo" ...) that will
+      ;; match 'foo from any package. as an example this is used for "test" in Stefil.
+      (setf (values definer found) (gethash (string name) *definers*)))
     (when (and errorp
                (not found))
       (error "No definer for ~S" name))
     (values definer found)))
 
 (defun (setf find-definer) (value name &key (if-exists :warn))
+  (check-type name definer-name)
   (check-type if-exists (member :warn :replace))
-  (bind ((key (symbol-name name))
-         (definer (gethash key *definers*)))
+  (bind ((definer (gethash name *definers*)))
     (when (and value
                definer
                (eq if-exists :warn)
                (not (defined-at-compile-time? definer)))
       (warn-redefining-definer name))
     (if value
-        (setf (gethash key *definers*) value)
-        (remhash key *definers*))))
+        (setf (gethash name *definers*) value)
+        (remhash name *definers*))))
 
 (defclass definer ()
   ((name :initarg :name :accessor name-of)
