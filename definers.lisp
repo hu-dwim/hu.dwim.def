@@ -30,17 +30,18 @@
                                        '((declare (optimize (speed 0) (debug 3)))))
                                      (when (get-option :optimize)
                                        '((declare (optimize (speed 3) (debug 0) (safety 2))))))))
-        `(locally
-             ,@outer-declarations
+        `(progn
            ,@(when (get-option :inline)
-                   `((declaim (inline ,name))))
-           ,@(when (get-option :export)
-                   `((export ',name)))
-           (,def-macro-name ,name ,args
-             ,@(when documentation
-                     (list documentation))
-             ,@declarations
-             ,@body))))))
+               `((declaim (inline ,name))))
+           (locally
+             ,@outer-declarations
+             ,@(when (get-option :export)
+                 `((export ',name)))
+             (,def-macro-name ,name ,args
+               ,@(when documentation
+                   (list documentation))
+               ,@declarations
+               ,@body)))))))
 
 (def (definer e :available-flags "ioed") function ()
   (function-like-definer -definer- 'defun -whole- -environment- -options-))
