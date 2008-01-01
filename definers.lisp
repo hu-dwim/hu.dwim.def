@@ -60,6 +60,11 @@ like #'eq and 'eq."
       (second spec)
       spec))
 
+(def (definer :available-flags "e") type (name args &body forms)
+  (with-standard-definer-options name
+    `(deftype ,name ,args
+       ,@forms)))
+
 (def (definer :available-flags "eas") class (name supers slots &rest options)
   "Example that exports all the class name and all the readers, writers and slot names:
     (def (class eas) foo \(bar baz)
