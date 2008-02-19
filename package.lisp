@@ -7,7 +7,7 @@
 (cl:in-package :cl-user)
 
 (defpackage :cl-def
-  
+
   (:use :common-lisp :metabang-bind :alexandria :iterate :cl-def.system)
 
   (:export
@@ -15,7 +15,7 @@
    #:definer
    #:find-definer
    #:with-standard-definer-options
-   
+
    #:-whole-
    #:-environment-
    #:-definer-

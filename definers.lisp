@@ -154,6 +154,7 @@ like #'eq and 'eq."
                  (let (,@(when with-package `((*package* ,(find-package with-package)))))
                    ,@body)))))))))
 
+;; TODO support (-body- foo bar baz)
 (def (definer e :available-flags "e") with-macro (name args &body body)
   "(def with-macro with-foo (arg1 arg2 &key alma)
      (let ((*zyz* 42))
