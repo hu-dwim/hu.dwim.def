@@ -20,7 +20,7 @@
 
 (defun find-definer (name &optional (errorp #t))
   (check-type name definer-name)
-  (bind (((values definer found) (gethash name *definers*)))
+  (bind (((:values definer found) (gethash name *definers*)))
     (unless found
       ;; try once again as a string, so you can (def definer "foo" ...) that will
       ;; match 'foo from any package. as an example this is used for "test" in Stefil.
@@ -131,8 +131,8 @@
           (declare (ignorable -definer- -environment-))
           (setf -whole- (copy-seq -whole-))
           (bind (((name-and-options args &rest body) (nthcdr 2 -whole-))
-                 ((values nil options) (parse-definer-name-and-options -whole- definer-definer))
-                 ((values body declarations doc-string) (parse-body body :documentation #t :whole -whole-)))
+                 ((:values nil options) (parse-definer-name-and-options -whole- definer-definer))
+                 ((:values body declarations doc-string) (parse-body body :documentation #t :whole -whole-)))
             (setf name-and-options (ensure-list name-and-options))
             (with-unique-names (name)
               `(progn

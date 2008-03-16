@@ -22,7 +22,7 @@
       (setf -options- (funcall it -options-)))
     (flet ((get-option (option)
              (getf -options- option)))
-      (bind (((values body declarations documentation) (parse-body body :documentation #t :whole -whole-))
+      (bind (((:values body declarations documentation) (parse-body body :documentation #t :whole -whole-))
              (outer-declarations (if (get-option :debug)
                                      (progn
                                        (when (get-option #\o)
