@@ -1,7 +1,16 @@
 
 You may want to add this to your emacs setup:
 
-(put 'def 'common-lisp-indent-function '(4 4 (&whole 4 &rest 2) &body))
+(let ((overrides
+       '((defclass* defclass)
+         (defcondition* defcondition)
+         (def (4 4 (&whole 4 &rest 2) &body))
+         (defresources (4 &rest (&whole 2 &lambda &body))))))
+  (dolist (el overrides)
+    (put (first el) 'common-lisp-indent-function
+         (if (symbolp (second el))
+             (get (second el) 'common-lisp-indent-function)
+             (second el)))))
 
 And maybe this to lisp-font-lock-keywords-2
 
