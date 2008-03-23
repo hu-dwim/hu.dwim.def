@@ -12,7 +12,7 @@
     (when (find-package :asdf-install)
       (eval (read-from-string "(asdf-install:install '#:asdf-system-connections)")))
     (unless (asdf:find-system :asdf-system-connections nil)
-      (error "The defclass-star system requires asdf-system-connections. See http://www.cliki.net/asdf-system-connections for details and download instructions.")))
+      (error "The cl-def system requires asdf-system-connections. See http://www.cliki.net/asdf-system-connections for details and download instructions.")))
   (asdf:operate 'asdf:load-op :asdf-system-connections))
 
 (defpackage #:cl-def.system
