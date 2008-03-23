@@ -130,7 +130,7 @@ like #'eq and 'eq."
     `(defmethod initialize-instance :after ((,(intern "SELF") ,class-name) &key ,@key-args)
       ,@body)))
 
-(def (definer e) print-object (class-name* &body body)
+(def (definer e) print-object (&whole whole class-name* &body body)
   "Define a PRINT-OBJECT method using PRINT-UNREADABLE-OBJECT.
   An example:
   (def print-object parenscript-dispatcher ; could be (parenscript-dispatcher :identity nil)
@@ -140,19 +140,23 @@ like #'eq and 'eq."
     (princ (parenscript-file self)))"
   (with-unique-names (stream printing)
     (bind ((args (ensure-list class-name*))
-           ((class-name &key (identity t) (type t) with-package (muffle-errors t)) args))
+           ((class-name &key (identity t) (type t) with-package (muffle-errors t)) args)
+           ((:values body declarations documentation) (parse-body body :documentation #t :whole whole)))
       `(defmethod print-object ((,(intern "SELF") ,class-name) ,stream)
-        (print-unreadable-object (,(intern "SELF") ,stream :type ,type :identity ,identity)
-          (let ((*standard-output* ,stream))
-            (block ,printing
-              (,@(if muffle-errors
-                     `(handler-bind ((error (lambda (error)
-                                              (declare (ignore error))
-                                              (write-string "<<error printing object>>")
-                                              (return-from ,printing)))))
-                     `(progn))
-                 (let (,@(when with-package `((*package* ,(find-package with-package)))))
-                   ,@body)))))))))
+         ,@(when documentation
+             (list documentation))
+         ,@declarations
+         (print-unreadable-object (,(intern "SELF") ,stream :type ,type :identity ,identity)
+           (let ((*standard-output* ,stream))
+             (block ,printing
+               (,@(if muffle-errors
+                      `(handler-bind ((error (lambda (error)
+                                               (declare (ignore error))
+                                               (write-string "<<error printing object>>")
+                                               (return-from ,printing)))))
+                      `(progn))
+                  (let (,@(when with-package `((*package* ,(find-package with-package)))))
+                    ,@body)))))))))
 
 ;; TODO support (-body- foo bar baz)
 (def (definer e :available-flags "e") with-macro (name args &body body)
