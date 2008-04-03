@@ -83,35 +83,31 @@ like #'eq and 'eq."
        ,slots
        ,@options)))
 
+(defun %reevaluate-constant (name value &key (test 'eql))
+  (if (not (boundp name))
+      value
+      (let ((old (symbol-value name))
+            (new value))
+        (if (not (constantp name))
+            (prog1 new
+              (cerror "Try to redefine the variable as a constant."
+                      "~@<~S is an already bound non-constant variable ~
+                       whose value is ~S.~:@>" name old))
+            (if (funcall test old new)
+                old
+                (prog1 new
+                  (cerror "Try to redefine the constant."
+                          "~@<~S is an already defined constant whose value ~
+                           ~S is not equal to the provided initial value ~S ~
+                           under ~S.~:@>" name old new test)))))))
+
 (def (definer e :available-flags "e") constant (name initial-value &optional documentation)
   "Use like: (def (constant e :test #'string=) alma \"korte\")"
   (check-type name symbol)
-  (bind ((test (getf -options- :test 'eq)))
-    (setf test (extract-function-name test))
+  (bind ((test (getf -options- :test ''eql)))
     (with-standard-definer-options name
-      `(defconstant ,name
-        (let ((new ,initial-value))
-          (if (boundp ',name)
-              (let ((old (symbol-value ',name)))
-                (cond
-                  ((constantp ',name)
-                   (cond
-                     ((,test old new)
-                      old)
-                     (t
-                      (cerror "Try to redefine the constant."
-                              "~@<~S is an already defined constant whose value ~
-                               ~S is not equal to the provided initial value ~S ~
-                               under ~S.~:@>" ',name old new ',test)
-                      new)))
-                  (t
-                   (cerror "Try to redefine the variable as a constant."
-                           "~@<~S is an already bound non-constant variable ~
-                            whose value is ~S.~:@>" ',name old)
-                   new)))
-              new))
-        ,@(when documentation
-                (list documentation))))))
+      `(defconstant ,name (%reevaluate-constant ',name ,initial-value :test ,test)
+         ,@(when documentation `(,documentation))))))
 
 (def (definer e :available-flags "e") special-variable (name &optional value documentation)
   "Uses defvar/defparameter based on whether a value was provided or not, and accepts :documentation definer parameter for value-less defvars."
