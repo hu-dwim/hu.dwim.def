@@ -54,7 +54,8 @@
   (format t "definer ~S" (name-of self)))
 
 (defmethod initialize-instance :after ((self definer) &key &allow-other-keys)
-  (setf (available-flags-of self) (coerce (string-downcase (available-flags-of self)) 'list)))
+  (awhen (available-flags-of self)
+    (setf (available-flags-of self) (coerce (string-downcase it) 'list))))
 
 (defun make-definer (name expander &rest initargs)
   (apply #'make-instance 'definer :name name :expander expander initargs))
