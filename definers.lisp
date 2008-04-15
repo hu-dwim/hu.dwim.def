@@ -118,9 +118,10 @@ like #'eq and 'eq."
       `(progn
         ,@(when documentation
             `((setf (documentation ',name 'variable) ,documentation)))
-        (,(if has-value? 'defparameter 'defvar)
-         ,name
-         ,@(when has-value? (list value)))))))
+        (defvar ,name)
+        (makunbound ',name)
+        ,@(when has-value?
+            `((setf ,name ,value)))))))
 
 (def (definer e) constructor (class-name* &body body)
   (let ((key-args (when (listp class-name*)
