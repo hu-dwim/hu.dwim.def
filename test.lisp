@@ -22,45 +22,63 @@
 
 (defsuite* (test :description "cl-def tests"))
 
-(deftest test-function ()
+(deftest test/function ()
   (is (equal '(progn
                (declaim (inline foo))
-               (export 'foo)
-               (defun foo (bar baz unused)
-                 "documentation"
-                 (declare (optimize (speed 0) (debug 3)))
-                 (declare (ignore unused))
-                 (+ bar baz)))
+               (locally (declare (optimize (speed 0) (debug 3)))
+                 (export 'foo)
+                 (defun foo (bar baz unused)
+                   "documentation"
+                   (declare (ignore unused))
+                   (+ bar baz))))
              (macroexpand-1 '(def (function ioed) foo (bar baz unused)
                               "documentation"
                               (declare (ignore unused))
                               (+ bar baz))))))
 
-(deftest test-method ()
+(deftest test/method ()
   (is (equal '(progn
-               (declaim (inline foo))
-               (export 'foo)
-               (defmethod foo ((bar integer) (baz string) unused) "documentation"
-                          (declare (optimize (speed 0) (debug 3)))
-                          (declare (ignore unused)) (+ bar baz)))
-             (macroexpand-1 '(def (method ioed) foo ((bar integer) (baz string) unused)
+               (locally
+                   (declare (optimize (speed 0) (debug 3)))
+                 (export 'foo)
+                 (defmethod foo ((bar integer) (baz string) unused)
+                   "documentation"
+                   (declare (ignore unused))
+                   (+ bar baz))))
+             (macroexpand-1 '(def (method oed) foo ((bar integer) (baz string) unused)
                               "documentation"
                               (declare (ignore unused))
                               (+ bar baz))))))
 
-(deftest test-test ()
+(deftest test/test ()
   (is (equal '(progn
-               (deftest foo (bar baz unused) "documentation"
-                        (declare (ignore unused)) (+ bar baz)))
+               (locally
+                   (deftest foo (bar baz unused)
+                     "documentation"
+                     (declare (ignore unused))
+                     (+ bar baz))))
              (macroexpand-1 '(def test foo (bar baz unused)
                               "documentation"
                               (declare (ignore unused))
                               (+ bar baz))))))
 
-(deftest test-constant ()
-  (is (equal '(defconstant +foo+ 1 "documentation")
+(deftest test/constant ()
+  (is (equal '(progn
+               (defconstant +foo+ (cl-def::%reevaluate-constant '+foo+ 1 :test 'eql)
+                 "documentation"))
              (macroexpand-1 '(def constant +foo+ 1 "documentation")))))
 
-(deftest test-variable ()
-  (is (equal '(defvar +foo+ 1 "documentation")
-             (macroexpand-1 '(def variable +foo+ 1 "documentation")))))
+(deftest test/special-variable ()
+  (is (equal '(progn
+               (progn
+                 (setf (documentation '+foo+ 'variable) "documentation")
+                 (defvar +foo+)
+                 (makunbound '+foo+)
+                 (setf +foo+ 1)))
+             (macroexpand-1 '(def special-variable +foo+ 1 "documentation"))))
+  (is (equal '(progn
+               (progn
+                 (setf (documentation '+foo+ 'variable) "documentation")
+                 (defvar +foo+)
+                 (makunbound '+foo+)))
+             (macroexpand-1 '(def (special-variable :documentation "documentation") +foo+)))))
