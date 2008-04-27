@@ -8,7 +8,14 @@
 
 (defpackage :cl-def
 
-  (:use :common-lisp :metabang-bind :alexandria :iterate :cl-def.system)
+  (:use
+   :common-lisp
+   :metabang-bind
+   :alexandria
+   :iterate
+   :cl-def.system
+   :cl-syntax-sugar
+   )
 
   (:export
    #:def

@@ -8,55 +8,21 @@
 
 ;;; try to load asdf-system-connections
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (unless (asdf:find-system :asdf-system-connections nil)
-    (when (find-package :asdf-install)
-      (eval (read-from-string "(asdf-install:install '#:asdf-system-connections)")))
-    (unless (asdf:find-system :asdf-system-connections nil)
-      (error "The cl-def system requires asdf-system-connections. See http://www.cliki.net/asdf-system-connections for details and download instructions.")))
-  (asdf:operate 'asdf:load-op :asdf-system-connections))
+  (flet ((try (system)
+           (unless (asdf:find-system system nil)
+             (warn "Trying to install required dependency: ~S" system)
+             (when (find-package :asdf-install)
+               (funcall (read-from-string "asdf-install:install") system))
+             (unless (asdf:find-system system nil)
+               (error "The ~A system requires ~A." (or *compile-file-pathname* *load-pathname*) system)))
+           (asdf:operate 'asdf:load-op system)))
+    (try :cl-syntax-sugar)
+    (try :asdf-system-connections)))
 
 (defpackage #:cl-def.system
-    (:use :cl :asdf :asdf-system-connections)
-
-  (:shadow
-   ;; bah, i don't want to give them new names...
-   #:defsystem
-   #:cl-source-file
-   #:system))
+  (:use :common-lisp :asdf :asdf-system-connections :cl-syntax-sugar))
 
 (in-package #:cl-def.system)
-
-(defclass readtable-support-mixin ()
-  ((setup-readtable-function :initform nil :initarg :setup-readtable-function :accessor setup-readtable-function-of)))
-
-(defclass system (asdf:system readtable-support-mixin)
-  ())
-
-(defclass cl-source-file (asdf:cl-source-file readtable-support-mixin)
-  ())
-
-(defmethod perform :around ((op operation) (component readtable-support-mixin))
-  (let* ((*readtable* *readtable*)
-         (system (loop for parent = (component-parent component) :then (component-parent parent)
-                       while parent
-                       when (typep parent 'system)
-                       return parent))
-         (setup-readtable-function (or (setup-readtable-function-of component)
-                                       (setup-readtable-function-of system))))
-    (when setup-readtable-function
-      (let ((fn (ignore-errors
-                  (fdefinition
-                   (read-from-string
-                    (string-upcase setup-readtable-function))))))
-        (when fn 
-          (funcall fn))))
-    (call-next-method)))
-
-(defmacro defsystem (name &body rest)
-  `(asdf:defsystem ,name
-    :default-component-class cl-source-file
-    :class system
-    ,@rest))
 
 (defsystem :cl-def
   :version "0.1"
@@ -64,13 +30,15 @@
 	   "Levente Mészáros <levente.meszaros@gmail.com>")
   :licence "BSD / Public domain"
   :description "cl-def - (def function ioe name (arg1) ...)"
-  :depends-on (:alexandria :iterate :metabang-bind)
+  :depends-on (:alexandria :iterate :metabang-bind :cl-syntax-sugar)
+  :class system-with-readtable
+  :default-component-class cl-source-file-with-readtable
   :setup-readtable-function "cl-def::setup-readtable"
   :serial t
   :components
   ((:file "package")
-   (:file "duplicates")
    (:file "configuration")
+   (:file "duplicates")
    (:file "def")
    (:file "definers")))
 
@@ -87,6 +55,9 @@
 (defsystem :cl-def-test
   :description "Tests for the cl-def test system."
   :depends-on (:cl-def :stefil)
+  :default-component-class cl-source-file-with-readtable
+  :class system-with-readtable
+  :setup-readtable-function "cl-def::setup-readtable"
   :components
   ((:file "test")))
 
