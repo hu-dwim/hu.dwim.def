@@ -13,6 +13,15 @@
                                           name)))
     (fdefinition it)))
 
+(defun function-like-definer-declarations (-options-)
+  (if (getf -options- :debug)
+      (progn
+        (when (getf -options- #\o)
+          (warn "Ignoring 'O'ptimize flag because 'D'ebug was also specified"))
+        '((declare (optimize (speed 0) (debug 3)))))
+      (when (getf -options- :optimize)
+        '((declare (optimize (speed 3) (debug 0) (safety 2)))))))
+
 (defun function-like-definer (-definer- def-macro-name -whole- -environment- -options-)
   (declare (ignore -environment- -definer-))
   (bind ((body (nthcdr 2 -whole-))
@@ -20,28 +29,20 @@
          (args (pop body)))
     (awhen (function-definer-option-transformer name)
       (setf -options- (funcall it -options-)))
-    (flet ((get-option (option)
-             (getf -options- option)))
-      (bind (((:values body declarations documentation) (parse-body body :documentation #t :whole -whole-))
-             (outer-declarations (if (get-option :debug)
-                                     (progn
-                                       (when (get-option #\o)
-                                         (warn "Ignoring 'O'ptimize flag because 'D'ebug was also specified"))
-                                       '((declare (optimize (speed 0) (debug 3)))))
-                                     (when (get-option :optimize)
-                                       '((declare (optimize (speed 3) (debug 0) (safety 2))))))))
-        `(progn
-           ,@(when (get-option :inline)
-               `((declaim (inline ,name))))
-           (locally
+    (bind (((:values body declarations documentation) (parse-body body :documentation #t :whole -whole-))
+           (outer-declarations (function-like-definer-declarations -options-)))
+      `(progn
+         ,@(when (getf -options- :inline)
+                 `((declaim (inline ,name))))
+         (locally
              ,@outer-declarations
-             ,@(when (get-option :export)
-                 `((export ',name)))
-             (,def-macro-name ,name ,args
-               ,@(when documentation
-                   (list documentation))
-               ,@declarations
-               ,@body)))))))
+           ,@(when (getf -options- :export)
+                   `((export ',name)))
+           (,def-macro-name ,name ,args
+             ,@(when documentation
+                     (list documentation))
+             ,@declarations
+             ,@body))))))
 
 (def (definer e :available-flags "ioed") function ()
   (function-like-definer -definer- 'defun -whole- -environment- -options-))
@@ -51,6 +52,16 @@
 
 (def (definer e :available-flags "eod") macro ()
   (function-like-definer -definer- 'defmacro -whole- -environment- -options-))
+
+(def (definer e :available-flags "eod") generic ()
+  (bind ((body (nthcdr 2 -whole-))
+         (name (pop body))
+         (outer-declarations (function-like-definer-declarations -options-)))
+    `(locally
+         ,@outer-declarations
+       ,@(when (getf -options- :export)
+               `((export ',name)))
+       (defgeneric ,name ,@body))))
 
 (defun extract-function-name (spec)
   "Useful for macros that want to emulate the functional interface for functions
