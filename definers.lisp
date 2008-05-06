@@ -53,6 +53,9 @@
 (def (definer e :available-flags "eod") macro ()
   (function-like-definer -definer- 'defmacro -whole- -environment- -options-))
 
+(def (definer e :available-flags "eod") compiler-macro ()
+  (function-like-definer -definer- 'define-compiler-macro -whole- -environment- -options-))
+
 (def (definer e :available-flags "eod") generic ()
   (bind ((body (nthcdr 2 -whole-))
          (name (pop body))
