@@ -137,14 +137,17 @@ like #'eq and 'eq."
         ,@(when has-value?
             `((setf ,name ,value)))))))
 
-(def (definer e) constructor (class-name* &body body)
+(def (definer e :available-flags "o") constructor (class-name* &body body)
   (let ((key-args (when (listp class-name*)
                     (rest class-name*)))
         (class-name (if (listp class-name*)
                         (first class-name*)
                         class-name*)))
-    `(defmethod initialize-instance :after ((,(intern "SELF") ,class-name) &key ,@key-args)
-      ,@body)))
+    (bind ((declarations (function-like-definer-declarations -options-)))
+      `(locally
+           ,@declarations
+         (defmethod initialize-instance :after ((,(intern "SELF") ,class-name) &key ,@key-args)
+           ,@body)))))
 
 (def (definer e) print-object (&whole whole class-name* &body body)
   "Define a PRINT-OBJECT method using PRINT-UNREADABLE-OBJECT.
