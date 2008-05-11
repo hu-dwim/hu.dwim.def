@@ -149,11 +149,21 @@
                                           (declare (ignorable -definer- -environment-))
                                           (bind ((-options- (nth-value 1 (parse-definer-name-and-options
                                                                           -whole- -definer-)))
-                                                 ,@(when args
-                                                         `((,(substitute '&rest '&body args) (nthcdr 2 -whole-)))))
+                                                 ;; KLUDGE it could be this simple, but bind has a bug:
+                                                 ;; (bind (((a &key (b nil b-p)) 42))) replaces nil to a gensym
+                                                 ;;,@(when args
+                                                 ;;;        `((,(substitute '&rest '&body args) (nthcdr 2 -whole-))))
+                                                 )
                                             (declare (ignorable -options-))
-                                            ,@declarations
-                                            ,@body))
+                                            ,(if args
+                                                 `(destructuring-bind
+                                                        ,(substitute '&rest '&body args)
+                                                      (nthcdr 2 -whole-)
+                                                    ,@declarations
+                                                    ,@body)
+                                                 `(locally
+                                                      ,@declarations
+                                                    ,@body))))
                                         :documentation ,doc-string
                                         ,@options))))
                 (eval-when (:compile-toplevel)
