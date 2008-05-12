@@ -177,23 +177,49 @@ like #'eq and 'eq."
                   (let (,@(when with-package `((*package* ,(find-package with-package)))))
                     ,@body)))))))))
 
-;; TODO support (-body- foo bar baz)
-(def (definer e :available-flags "e") with-macro (name args &body body)
+(def (definer e :available-flags "eo") with-macro (name args &body body)
   "(def with-macro with-foo (arg1 arg2 &key alma)
-     (let ((*zyz* 42))
+     (let ((*zyz* 42)
+           (local 43))
        (do something)
-       -body-))"
-  (bind ((call-funcion-name (concatenate-symbol *package* "call-" name)))
-    (with-unique-names (trunk with-body)
-      (with-standard-definer-options name
-        `(progn
-           (defun ,call-funcion-name (,trunk ,@args)
-             ,@(tree-substitute `(funcall ,trunk) '-body- body))
-           (defmacro ,name (,@args &body ,with-body)
-             `(,',call-funcion-name
-               (lambda ()
-                 ,@,with-body)
-               ,,@(lambda-list-to-funcall-list args))))))))
+       (-body- local)))"
+  (with-unique-names (fn with-body)
+    (with-standard-definer-options name
+      (bind ((call-funcion-name (concatenate-symbol *package* "call-" name))
+             (inner-arguments 'undefined))
+        (labels ((process-body (form)
+                   (if (consp form)
+                       (if (eq (first form) '-body-)
+                           (progn
+                             (assert (or (eq inner-arguments 'undefined)
+                                         (length= inner-arguments (rest form)))
+                                     () "Used body more than once and they have different number of arguments")
+                             (setf inner-arguments (rest form))
+                             `(funcall ,fn ,@inner-arguments))
+                           (iter (for entry :first form :then (cdr entry))
+                                 (collect (process-body (car entry)) :into result)
+                                 (cond
+                                   ((consp (cdr entry))
+                                    ;; nop, go on looping
+                                    )
+                                   ((cdr entry)
+                                    (setf (cdr (last result)) (cdr entry))
+                                    (return result))
+                                   (t (return result)))))
+                       form)))
+          (setf body (process-body body))
+          (when (eq inner-arguments 'undefined)
+            (error "Please insert at least one (-body-) in the body of a with-macro"))
+          `(progn
+             (defun ,call-funcion-name (,fn ,@args)
+               (declare (type function ,fn))
+               ,@(function-like-definer-declarations -options-)
+               ,@body)
+             (defmacro ,name (,@args &body ,with-body)
+               `(,',call-funcion-name
+                 (lambda ,',inner-arguments
+                   ,@,with-body)
+                 ,,@(lambda-list-to-funcall-list args)))))))))
 
 (def (definer e :available-flags "e") with/without (name)
   (bind ((variable-name (concatenate-symbol "*" name "*"))
