@@ -10,7 +10,7 @@
 ;; home package of 'test. this is done like that to be able to write
 ;; (def any-package::test some-lib::test ...) in any library to create the toplevel TEST
 ;; defun called some-lib::test without shadowing stefil:test everywhere.
-(def definer "TEST" ()
+(def (definer :available-flags "do") "TEST" ()
   (function-like-definer -definer- 'stefil:deftest -whole- -environment- -options-))
 
 (def definer stefil::suite (name &rest args)
