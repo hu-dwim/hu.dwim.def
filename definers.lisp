@@ -120,8 +120,9 @@ like #'eq and 'eq."
   (check-type name symbol)
   (bind ((test (getf -options- :test ''eql)))
     (with-standard-definer-options name
-      `(defconstant ,name (%reevaluate-constant ',name ,initial-value :test ,test)
-         ,@(when documentation `(,documentation))))))
+      `(eval-when (:compile-toplevel :load-toplevel :execute)
+         (defconstant ,name (%reevaluate-constant ',name ,initial-value :test ,test)
+           ,@(when documentation `(,documentation)))))))
 
 (def (definer e :available-flags "e") special-variable (name &optional value documentation)
   "Uses defvar/defparameter based on whether a value was provided or not, and accepts :documentation definer parameter for value-less defvars."
