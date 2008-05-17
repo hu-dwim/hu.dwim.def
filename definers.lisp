@@ -216,7 +216,7 @@ like #'eq and 'eq."
                (declare (type function ,fn))
                ,@(function-like-definer-declarations -options-)
                ,@body)
-             (defmacro ,name ((,@args) &body ,with-body)
+             (defmacro ,name (,@(when args (list args)) &body ,with-body)
                `(,',call-funcion-name
                  (lambda ,',inner-arguments
                    ,@,with-body)
