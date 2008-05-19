@@ -64,8 +64,9 @@
 
 (deftest test/constant ()
   (is (equal '(progn
-               (defconstant +foo+ (cl-def::%reevaluate-constant '+foo+ 1 :test 'eql)
-                 "documentation"))
+               (eval-when (:compile-toplevel :load-toplevel :execute)
+                 (defconstant +foo+ (cl-def::%reevaluate-constant '+foo+ 1 :test 'eql)
+                   "documentation")))
              (macroexpand-1 '(def constant +foo+ 1 "documentation")))))
 
 (deftest test/special-variable ()
@@ -82,3 +83,31 @@
                  (defvar +foo+)
                  (makunbound '+foo+)))
              (macroexpand-1 '(def (special-variable :documentation "documentation") +foo+)))))
+
+(def special-variable *foo*)
+
+(def with-macro with-foo1 (foo)
+  (let ((*foo* foo))
+    (-body-)))
+
+(def with-macro with-foo2 (foo bar)
+  (let* ((local (* 2 foo))
+         (*foo* (+ local bar)))
+    ;; using this syntax, LOCAL is made available in the scope of the body forms
+    (-body- local)))
+
+(def with-macro with-foo3 (foo &key bar)
+  (let* ((local (* 2 foo))
+         (*foo* (+ local bar)))
+    (-body- local)))
+
+(deftest test/with-macro ()
+  (with-foo1 (42)
+    (is (= *foo* 42)))
+  (with-foo2 (2 6)
+    (is (= local 4))
+    (is (= *foo* 10)))
+  (with-foo3 (2 :bar 6)
+    (is (= local 4))
+    (is (= *foo* 10))))
+
