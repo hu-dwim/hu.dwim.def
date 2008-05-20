@@ -7,11 +7,13 @@
 (in-package :cl-def)
 
 (defun function-definer-option-transformer (name)
-  (awhen (find-symbol "TRANSFORM-FUNCTION-DEFINER-OPTIONS"
-                      (symbol-package (if (consp name)
-                                          (second name)
-                                          name)))
-    (fdefinition it)))
+  (bind ((name (find-symbol "TRANSFORM-FUNCTION-DEFINER-OPTIONS"
+                            (symbol-package (if (consp name)
+                                                (second name)
+                                                name)))))
+    (when (and name
+               (fboundp name))
+      (fdefinition name))))
 
 (defun function-like-definer-declarations (-options-)
   (if (getf -options- :debug)
