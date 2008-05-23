@@ -149,6 +149,8 @@ like #'eq and 'eq."
     (bind ((declarations (function-like-definer-declarations -options-)))
       `(locally
            ,@declarations
+         ;; TODO this is a bad idea, a headache for macro writing macros...
+         ;; use -self- instead
          (defmethod initialize-instance :after ((,(intern "SELF") ,class-name) &key ,@key-args)
            ,@body)))))
 
