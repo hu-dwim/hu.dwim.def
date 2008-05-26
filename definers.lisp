@@ -149,8 +149,8 @@ like #'eq and 'eq."
     (bind ((declarations (function-like-definer-declarations -options-)))
       `(locally
            ,@declarations
-         ;; TODO this is a bad idea, a headache for macro writing macros...
-         ;; use -self- instead
+         ;; TODO this is a bad idea: a headache for macro writing macros...
+         ;; use -self- instead. same for print-object and friends...
          (defmethod initialize-instance :after ((,(intern "SELF") ,class-name) &key ,@key-args)
            ,@body)))))
 
@@ -180,7 +180,9 @@ like #'eq and 'eq."
                                                (return-from ,printing)))))
                       `(progn))
                   (let (,@(when with-package `((*package* ,(find-package with-package)))))
-                    ,@body)))))))))
+                    ,@body)))))
+         ;; primary PRINT-OBJECT methods are supposed to return the object
+         ,(intern "SELF")))))
 
 (def (definer e :available-flags "eo") with-macro (name args &body body)
   "(def with-macro with-foo (arg1 arg2 &key alma)
