@@ -27,4 +27,5 @@
    #:-environment-
    #:-definer-
    #:-options-
-   #:-body-))
+   #:-body-
+   #:-self-))

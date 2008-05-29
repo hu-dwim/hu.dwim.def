@@ -162,7 +162,7 @@ like #'eq and 'eq."
            ,@declarations
          ;; TODO this is a bad idea: a headache for macro writing macros...
          ;; use -self- instead. same for print-object and friends...
-         (defmethod initialize-instance :after ((,(intern "SELF") ,class-name) &key ,@key-args)
+         (defmethod initialize-instance :after ((-self- ,class-name) &key ,@key-args)
            ,@body)))))
 
 (def (definer e) print-object (&whole whole class-name* &body body)
@@ -177,11 +177,11 @@ like #'eq and 'eq."
     (bind ((args (ensure-list class-name*))
            ((class-name &key (identity t) (type t) with-package (muffle-errors t)) args)
            ((:values body declarations documentation) (parse-body body :documentation #t :whole whole)))
-      `(defmethod print-object ((,(intern "SELF") ,class-name) ,stream)
+      `(defmethod print-object ((-self- ,class-name) ,stream)
          ,@(when documentation
              (list documentation))
          ,@declarations
-         (print-unreadable-object (,(intern "SELF") ,stream :type ,type :identity ,identity)
+         (print-unreadable-object (-self- ,stream :type ,type :identity ,identity)
            (let ((*standard-output* ,stream))
              (block ,printing
                (,@(if muffle-errors
@@ -193,7 +193,7 @@ like #'eq and 'eq."
                   (let (,@(when with-package `((*package* ,(find-package with-package)))))
                     ,@body)))))
          ;; primary PRINT-OBJECT methods are supposed to return the object
-         ,(intern "SELF")))))
+         -self-))))
 
 (def (definer e :available-flags "eo") with-macro (name args &body body)
   "(def with-macro with-foo (arg1 arg2 &key alma)
