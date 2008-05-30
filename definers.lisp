@@ -130,12 +130,13 @@ like #'eq and 'eq."
   (check-type name symbol)
   (bind ((variable-name (format-symbol *package* "%%%~A" name)))
     (with-standard-definer-options name
-      `(eval-when (:compile-toplevel :load-toplevel :execute)
-         (defvar ,variable-name)
-         (setf (documentation ',name 'variable) ,documentation)
-         (unless (boundp ',variable-name)
-           (setf ,variable-name ,initial-value)
-           (define-symbol-macro ,name (load-time-value ,variable-name)))))))
+      `(progn
+         (eval-when (:compile-toplevel :load-toplevel :execute)
+           (defvar ,variable-name)
+           (setf (documentation ',name 'variable) ,documentation)
+           (unless (boundp ',variable-name)
+             (setf ,variable-name ,initial-value)))
+         (define-symbol-macro ,name (load-time-value ,variable-name))))))
 
 (def (definer e :available-flags "e") special-variable (name &optional value documentation)
   "Uses defvar/defparameter based on whether a value was provided or not, and accepts :documentation definer parameter for value-less defvars."
