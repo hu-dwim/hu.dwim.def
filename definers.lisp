@@ -196,12 +196,7 @@ like #'eq and 'eq."
          ;; primary PRINT-OBJECT methods are supposed to return the object
          -self-))))
 
-(def (definer e :available-flags "eo") with-macro (name args &body body)
-  "(def with-macro with-foo (arg1 arg2 &key alma)
-     (let ((*zyz* 42)
-           (local 43))
-       (do something)
-       (-body- local)))"
+(defun expand-with-macro (name args body -options- flat)
   (with-unique-names (fn with-body)
     (with-standard-definer-options name
       (bind ((call-funcion-name (concatenate-symbol *package* "call-" name))
@@ -234,11 +229,37 @@ like #'eq and 'eq."
                (declare (type function ,fn))
                ,@(function-like-definer-declarations -options-)
                ,@body)
-             (defmacro ,name (,@(when args (list args)) &body ,with-body)
+             (defmacro ,name (,@(when args
+                                      (if flat
+                                          args
+                                          (list args)))
+                              &body ,with-body)
                `(,',call-funcion-name
                  (lambda ,',inner-arguments
                    ,@,with-body)
                  ,,@(lambda-list-to-funcall-list args)))))))))
+
+(def (definer e :available-flags "eo") with-macro (name args &body body)
+  "(def with-macro with-foo (arg1 arg2)
+     (let ((*zyz* 42)
+           (local 43))
+       (do something)
+       (-body- local)))
+   Example:
+   (with-foo arg1 arg2
+     (...))"
+  (expand-with-macro name args body -options- #t))
+
+(def (definer e :available-flags "eo") with-macro* (name args &body body)
+  "(def with-macro with-foo (arg1 arg2 &key alma)
+     (let ((*zyz* 42)
+           (local 43))
+       (do something)
+       (-body- local)))
+   Example:
+   (with-foo (arg1 arg2 :alma alma)
+     (...))"
+  (expand-with-macro name args body -options- #f))
 
 (def (definer e :available-flags "e") with/without (name)
   (bind ((variable-name (concatenate-symbol "*" name "*"))
