@@ -238,9 +238,11 @@ like #'eq and 'eq."
                ,@(function-like-definer-declarations -options-)
                ,@body)
              (defmacro ,name (,@(when args
-                                      (if flat
-                                          args
-                                          (list args)))
+                                  (bind ((macro-args (lambda-list-to-lambda-list-with-quoted-defaults
+                                                      args)))
+                                    (if flat
+                                        macro-args
+                                        (list macro-args))))
                               &body ,with-body)
                `(,',call-funcion-name
                  (lambda ,',inner-arguments
