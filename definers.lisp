@@ -201,6 +201,9 @@ like #'eq and 'eq."
          ;; primary PRINT-OBJECT methods are supposed to return the object
          -self-))))
 
+;; TODO it should check if the &key and &optional args of the macro part were provided and
+;; only forward them if when they were. otherwise let the function's default forms kick in.
+;; currently you need to C-c C-c all usages if the default values changed incompatibly.
 (defun expand-with-macro (name args body -options- flat)
   (with-unique-names (fn with-body)
     (with-standard-definer-options name
@@ -228,7 +231,7 @@ like #'eq and 'eq."
                        form)))
           (setf body (process-body body))
           (when (eq inner-arguments 'undefined)
-            (error "Please insert at least one (-body-) in the body of a with-macro"))
+            (error "Please insert at least one (-body-) form in the body of a with-macro"))
           `(progn
              (defun ,call-funcion-name (,fn ,@args)
                (declare (type function ,fn))
