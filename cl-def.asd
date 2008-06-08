@@ -52,6 +52,11 @@
   :components ((:module :integration
                         :components ((:file "slime")))))
 
+(defsystem-connection cl-def-and-contextl
+  :requires (:cl-def :contextl)
+  :components ((:module :integration
+                        :components ((:file "contextl")))))
+
 (defsystem :cl-def-test
   :description "Tests for the cl-def test system."
   :depends-on (:cl-def :stefil)
