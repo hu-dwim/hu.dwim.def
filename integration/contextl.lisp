@@ -19,16 +19,15 @@
                `((export ',name)))
        (contextl:define-layered-function ,name ,@body))))
 
-(contextl:deflayer foo ()
-  ())
+(def (definer e :available-flags "eod") layered-methods ()
+  (defmethods-like-definer 'contextl:define-layered-method -whole- -options-))
 
-(def (definer :available-flags "eas") contextl::layer (name supers slots &rest class-options)
+(def (definer e :available-flags "eas") layer (name supers slots &rest class-options)
   (with-class-definer-options name slots
     `(contextl::deflayer ,name ,supers
        ,slots
        ,@class-options)))
 
 (dolist (symbol '(contextl:layered-method
-                  contextl:layered-function
-                  contextl::layer))
+                  contextl:layered-function))
   (integrated-export symbol :cl-def))
