@@ -52,6 +52,22 @@
 (def (definer e :available-flags "eod") method ()
   (function-like-definer -definer- 'defmethod -whole- -environment- -options-))
 
+(defun defmethods-like-definer (actual-definer -whole- -options-)
+  (bind ((body (nthcdr 2 -whole-))
+         (name (pop body))
+         (outer-declarations (function-like-definer-declarations -options-)))
+    `(locally
+         ,@outer-declarations
+       ,@(when (getf -options- :export)
+               `((export ',name)))
+       ,@(iter (for entry :in body)
+               (when (eq (first entry) :method)
+                 (pop entry))
+               (collect `(,actual-definer ,name ,@entry))))))
+
+(def (definer e :available-flags "eod") methods ()
+  (defmethods-like-definer 'defmethod -whole- -options-))
+
 (def (definer e :available-flags "eod") macro ()
   (function-like-definer -definer- 'defmacro -whole- -environment- -options-))
 
