@@ -301,3 +301,37 @@ like #'eq and 'eq."
        (defmacro ,without-macro-name (&body forms)
          `(let ((,',variable-name #f))
             ,@forms)))))
+
+(def (definer e :available-flags "e") boolean-slot (class-name flag-slot-name slot-name)
+  "Example:
+\(def class clazz ()
+  ((%flags :initform 0)))
+\(def boolean-slot clazz %flags visible)
+allocates a bit index in the %FLAGS slot of the class CLAZZ and generates a reader and a writer for accessing that bit."
+  (bind ((accessor-name (symbolicate slot-name '#:-p))
+         (slot-name->index (get class-name 'flag-slot-indices))
+         (flag-index (aif (assoc (list flag-slot-name slot-name) slot-name->index :test #'equal)
+                          (cdr it)
+                          (bind ((max-index (or (iter (for (nil . index) :in slot-name->index)
+                                                      (maximizing index))
+                                                0))
+                                 (index (1+ max-index))
+                                 (flag-count-limit (truncate (cl:log most-positive-fixnum 2))))
+                            (assert (< (1+ max-index) flag-count-limit) ()
+                                    "The number or flag slots in ~S / ~S doesn't fit in a fixnum that can store ~S flags"
+                                    class-name flag-slot-name flag-count-limit)
+                            (push (cons (list flag-slot-name slot-name) index) (get class-name 'flag-slot-indices))
+                            index))))
+    (declare (type fixnum flag-index))
+    (with-standard-definer-options accessor-name
+      `(progn
+         (def (method o) ,accessor-name ((instance ,class-name))
+           (not (zerop (logand (the fixnum (slot-value instance ',flag-slot-name)) ,(expt 2 flag-index)))))
+         (def (method o) (setf ,accessor-name) (new-value (instance ,class-name))
+           (bind ((slot-value (slot-value instance ',flag-slot-name)))
+             (declare (type fixnum slot-value))
+             (setf (slot-value instance ',flag-slot-name)
+                   (if new-value
+                       (logior (the fixnum slot-value) ,(expt 2 flag-index))
+                       (logand (the fixnum slot-value) ,(lognot (expt 2 flag-index))))))
+           new-value)))))
