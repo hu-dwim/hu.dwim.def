@@ -308,6 +308,7 @@ be interned into the current package at the time of calling."
 
 (defun integrated-export (symbol other-package)
   "Export SYMBOL from both its own package and OTHER-PACKAGE"
-  (export symbol (symbol-package symbol))
-  (shadowing-import symbol other-package)
-  (export symbol other-package))
+  (dolist (symbol (ensure-list symbol))
+    (export symbol (symbol-package symbol))
+    (shadowing-import symbol other-package)
+    (export symbol other-package)))
