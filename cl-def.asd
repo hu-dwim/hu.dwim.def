@@ -57,6 +57,11 @@
   :components ((:module :integration
                         :components ((:file "contextl")))))
 
+(defsystem-connection cl-def-and-cl-delico
+  :requires (:cl-def :cl-delico)
+  :components ((:module :integration
+                        :components ((:file "cl-delico")))))
+
 (defsystem :cl-def-test
   :description "Tests for the cl-def test system."
   :depends-on (:cl-def :stefil)
