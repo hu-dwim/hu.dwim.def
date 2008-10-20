@@ -62,6 +62,11 @@
   :components ((:module :integration
                         :components ((:file "cl-delico")))))
 
+(defsystem-connection cl-def-and-cl-l10n
+  :requires (:cl-def :cl-l10n)
+  :components ((:module :integration
+                        :components ((:file "cl-l10n")))))
+
 (defsystem :cl-def-test
   :description "Tests for the cl-def test system."
   :depends-on (:cl-def :stefil)
