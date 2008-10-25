@@ -20,7 +20,7 @@
     (try :asdf-system-connections)))
 
 (defpackage #:cl-def.system
-  (:use :common-lisp :asdf :asdf-system-connections :cl-syntax-sugar))
+  (:use :common-lisp :asdf :cl-syntax-sugar))
 
 (in-package #:cl-def.system)
 
