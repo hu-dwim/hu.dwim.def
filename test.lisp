@@ -18,9 +18,7 @@
 
 (in-package :cl-def-test)
 
-(in-root-suite)
-
-(defsuite* (test :description "cl-def tests"))
+(defsuite* (test :in root-suite :description "cl-def tests"))
 
 (deftest test/function ()
   (is (equal '(progn
