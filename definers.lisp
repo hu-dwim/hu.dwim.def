@@ -225,7 +225,7 @@ like #'eq and 'eq."
 (defun expand-with-macro (name args body -options- flat)
   (with-unique-names (fn with-body)
     (with-standard-definer-options name
-      (bind ((call-funcion-name (concatenate-symbol *package* "call-" name))
+      (bind ((call-funcion-name (format-symbol *package* "CALL-~A" name))
              (inner-arguments 'undefined))
         (labels ((process-body (form)
                    (if (consp form)
@@ -263,7 +263,7 @@ like #'eq and 'eq."
                                         (list macro-args))))
                               &body ,with-body)
                `(,',call-funcion-name
-                 (lambda ,',inner-arguments
+                 (named-lambda ,',(format-symbol *package* "~A-BODY" name) ,',inner-arguments
                    ,@,with-body)
                  ,,@(lambda-list-to-funcall-list args)))))))))
 
