@@ -219,43 +219,71 @@ like #'eq and 'eq."
          ;; primary PRINT-OBJECT methods are supposed to return the object
          -self-))))
 
+(defun simple-lambda-list-p (args)
+  (parse-lambda-list args
+                     (lambda (kind name entry &optional external-name default)
+                       (declare (ignore name entry external-name default))
+                       (when (member kind '(&rest &optional &key &allow-other-keys))
+                         (return-from simple-lambda-list-p #f))))
+  #t)
+
 ;; TODO it should check if the &key and &optional args of the macro part were provided and
 ;; only forward them if when they were. otherwise let the function's default forms kick in.
 ;; currently you need to C-c C-c all usages if the default values changed incompatibly.
-(defun expand-with-macro (name args body -options- flat)
+(defun expand-with-macro (name args body -options- flat must-have-args)
+  (unless (or (not flat)
+              (simple-lambda-list-p args))
+    (error "Can not generate a flat with-macro when using &rest, &optional or &key in its lambda list. Use with-macro* for that."))
   (with-unique-names (fn with-body)
     (with-standard-definer-options name
       (bind ((call-funcion-name (format-symbol *package* "CALL-~A" name))
              (inner-arguments 'undefined))
         (labels ((process-body (form)
                    (if (consp form)
-                       (if (eq (first form) '-body-)
-                           (progn
-                             (assert (or (eq inner-arguments 'undefined)
-                                         (length= inner-arguments (rest form)))
-                                     () "Used body more than once and they have different number of arguments")
-                             (setf inner-arguments (rest form))
-                             `(funcall ,fn ,@inner-arguments))
-                           (iter (for entry :first form :then (cdr entry))
-                                 (collect (process-body (car entry)) :into result)
-                                 (cond
-                                   ((consp (cdr entry))
-                                    ;; nop, go on looping
-                                    )
-                                   ((cdr entry)
-                                    (setf (cdr (last result)) (cdr entry))
-                                    (return result))
-                                   (t (return result)))))
+                       (cond
+                         ((eq (first form) '-body-)
+                          (unless (or (eq inner-arguments 'undefined)
+                                      (equal inner-arguments (rest form)))
+                            (error "Used -BODY- multiple times and they have different argument lists: ~S, ~S" inner-arguments (rest form)))
+                          (setf inner-arguments (rest form))
+                          ;; no, use an flet instead `(funcall ,fn ,@inner-arguments)
+                          form)
+                         ((and (eq (first form) 'function)
+                               (eq (second form) '-body-)
+                               (length= 2 form))
+                          ;; shut up if there's a #'-body- somewhere
+                          (setf inner-arguments nil)
+                          form)
+                         (t
+                          (iter (for entry :first form :then (cdr entry))
+                                (collect (process-body (car entry)) :into result)
+                                (cond
+                                  ((consp (cdr entry))
+                                   ;; nop, go on looping
+                                   )
+                                  ((cdr entry)
+                                   (setf (cdr (last result)) (cdr entry))
+                                   (return result))
+                                  (t (return result))))))
                        form)))
           (setf body (process-body body))
           (when (eq inner-arguments 'undefined)
-            (error "Please insert at least one (-body-) form in the body of a with-macro"))
+            (error "Please insert at least one (-body-) form in the body of a with-macro to invoke the user provided body!"))
+          (unless (and (every #'symbolp inner-arguments)
+                       (notany (lambda (el)
+                                 (member el '(&rest &optional &key &allow-other-keys)))
+                               inner-arguments))
+            (error "The arguemnts used to invoke (-body- foo1 foo2) may only contain symbols denoting variables that are \"transferred\" from the call site in the with-macro into the lexical scope of the user provided body."))
           `(progn
              (defun ,call-funcion-name (,fn ,@args)
                (declare (type function ,fn))
                ,@(function-like-definer-declarations -options-)
-               ,@body)
-             (defmacro ,name (,@(when args
+               (flet ((-body- (,@inner-arguments)
+                        (funcall ,fn ,@inner-arguments)))
+                 (declare (inline -body-))
+                 (block ,name
+                   ,@body)))
+             (defmacro ,name (,@(when (or args must-have-args)
                                   (bind ((macro-args (lambda-list-to-lambda-list-with-quoted-defaults
                                                       args)))
                                     (if flat
@@ -276,10 +304,10 @@ like #'eq and 'eq."
    Example:
    (with-foo arg1 arg2
      (...))"
-  (expand-with-macro name args body -options- #t))
+  (expand-with-macro name args body -options- #t #f))
 
 (def (definer e :available-flags "eo") with-macro* (name args &body body)
-  "(def with-macro with-foo (arg1 arg2 &key alma)
+  "(def with-macro* with-foo (arg1 arg2 &key alma)
      (let ((*zyz* 42)
            (local 43))
        (do something)
@@ -287,7 +315,7 @@ like #'eq and 'eq."
    Example:
    (with-foo (arg1 arg2 :alma alma)
      (...))"
-  (expand-with-macro name args body -options- #f))
+  (expand-with-macro name args body -options- #f #t))
 
 (def (definer e :available-flags "e") with/without (name)
   (bind ((variable-name (concatenate-symbol "*" name "*"))
