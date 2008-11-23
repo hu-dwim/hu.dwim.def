@@ -18,7 +18,7 @@
 
 (in-package :cl-def-test)
 
-(defsuite* (test :in root-suite :description "cl-def tests"))
+(defsuite* (test :in root-suite))
 
 (deftest test/function ()
   (is (equal '(progn
@@ -91,21 +91,21 @@
 (def with-macro with-foo2 (foo bar)
   (let* ((local (* 2 foo))
          (*foo* (+ local bar)))
-    ;; using this syntax, LOCAL is made available in the scope of the body forms
+    ;; using this syntax, LOCAL is "transferred" into the lexical scope of the body
     (-body- local)))
 
-(def with-macro with-foo3 (foo &key bar)
+(def with-macro* with-foo3 (foo &key bar)
   (let* ((local (* 2 foo))
          (*foo* (+ local bar)))
     (-body- local)))
 
 (deftest test/with-macro ()
-  (with-foo1 (42)
+  (with-foo1 42
     (is (= *foo* 42)))
-  (with-foo2 (2 6)
+  (with-foo2 2 6
     (is (= local 4))
     (is (= *foo* 10)))
-  (with-foo3 (2 :bar 6)
-    (is (= local 4))
+  (with-foo3 (2 :bar 6) ; there's a full arglist, because it's a with-macro*
+    (is (= local 4))    ; LOCAL is visible in the lexical scope
     (is (= *foo* 10))))
 
