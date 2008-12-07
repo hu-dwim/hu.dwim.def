@@ -104,6 +104,12 @@
          (*foo* (+ local bar)))
     (-body- (local new-var-name))))
 
+(def with-macro* with-foo5 (new-var-name foo &rest args &key bar (keyword-defaulting (+ 2 2)) &allow-other-keys)
+  (let* ((local (* 2 foo))
+         (*foo* (+ local bar)))
+    (-body- (local new-var-name))
+    (list* keyword-defaulting args)))
+
 (deftest test/with-macro ()
   (with-foo1 42
     (is (= *foo* 42)))
@@ -115,5 +121,9 @@
     (is (= *foo* 10)))
   (with-foo4 (zork 2 :bar 6) ; there's a full arglist, because it's a with-macro*
     (is (= zork 4))    ; LOCAL is visible in the lexical scope by the name given in VAR-NAME
-    (is (= *foo* 10))))
+    (is (= *foo* 10)))
+  (is (equal '(4 :bar 6 :baz 42)
+             (with-foo5 (zork 2 :bar 6 :baz 42)
+               (is (= zork 4))
+               (is (= *foo* 10))))))
 
