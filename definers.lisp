@@ -246,8 +246,10 @@ like #'eq and 'eq."
                                       (equal inner-arguments (rest form)))
                             (error "Used -BODY- multiple times and they have different argument lists: ~S, ~S" inner-arguments (rest form)))
                           (setf inner-arguments (rest form))
-                          ;; no, use an flet instead `(funcall ,fn ,@inner-arguments)
-                          form)
+                          ;; use an flet instead `(funcall ,fn ,@inner-arguments) so that #'-body- is also possible
+                          `(,(first form) ,@(mapcar (lambda (el)
+                                                      (first (ensure-list el)))
+                                                    (rest form))))
                          ((and (eq (first form) 'function)
                                (eq (second form) '-body-)
                                (length= 2 form))
@@ -269,31 +271,47 @@ like #'eq and 'eq."
           (setf body (process-body body))
           (when (eq inner-arguments 'undefined)
             (error "Please insert at least one (-body-) form in the body of a with-macro to invoke the user provided body!"))
-          (unless (and (every #'symbolp inner-arguments)
-                       (notany (lambda (el)
-                                 (member el '(&rest &optional &key &allow-other-keys)))
-                               inner-arguments))
-            (error "The arguemnts used to invoke (-body- foo1 foo2) may only contain symbols denoting variables that are \"transferred\" from the call site in the with-macro into the lexical scope of the user provided body."))
-          `(progn
-             (defun ,call-funcion-name (,fn ,@args)
-               (declare (type function ,fn))
-               ,@(function-like-definer-declarations -options-)
-               (flet ((-body- (,@inner-arguments)
-                        (funcall ,fn ,@inner-arguments)))
-                 (declare (inline -body-))
-                 (block ,name
-                   ,@body)))
-             (defmacro ,name (,@(when (or args must-have-args)
-                                  (bind ((macro-args (lambda-list-to-lambda-list-with-quoted-defaults
-                                                      args)))
-                                    (if flat
-                                        macro-args
-                                        (list macro-args))))
-                              &body ,with-body)
-               `(,',call-funcion-name
-                 (named-lambda ,',(format-symbol *package* "~A-BODY" name) ,',inner-arguments
-                   ,@,with-body)
-                 ,,@(lambda-list-to-funcall-list args)))))))))
+          (bind ((args-to-remove-from-fn ())
+                 (fn-args args)
+                 (processed-inner-arguments
+                  (mapcar (lambda (el)
+                            (if (consp el)
+                                (progn
+                                  (unless (and (length= 2 el)
+                                               (notany (lambda (part)
+                                                         (or (not (symbolp part))
+                                                             (not (symbolp part))
+                                                             (member part '(&rest &optional &key &allow-other-keys))))
+                                                       el))
+                                    (error "The arguemnts used to invoke (-body- foo1 foo2) may only contain symbols, or (with-macro-body-name lexically-visible-name) pairs denoting variables that are \"transferred\" from the call site in the with-macro into the lexical scope of the user provided body."))
+                                  (push (second el) args-to-remove-from-fn)
+                                  el)
+                                (list el `(quote ,el))))
+                          inner-arguments)))
+            (bind ((inner-arguments/macro-body (mapcar (compose #'first #'ensure-list) processed-inner-arguments))
+                   (inner-arguments/fn-body (mapcar #'second processed-inner-arguments)))
+              (dolist (arg args-to-remove-from-fn)
+                (removef fn-args arg))
+              `(progn
+                 (defun ,call-funcion-name (,fn ,@fn-args)
+                   (declare (type function ,fn))
+                   ,@(function-like-definer-declarations -options-)
+                   (flet ((-body- (,@inner-arguments/macro-body)
+                            (funcall ,fn ,@inner-arguments/macro-body)))
+                     (declare (inline -body-))
+                     (block ,name
+                       ,@body)))
+                 (defmacro ,name (,@(when (or args must-have-args)
+                                          (bind ((macro-args (lambda-list-to-lambda-list-with-quoted-defaults
+                                                              args)))
+                                            (if flat
+                                                macro-args
+                                                (list macro-args))))
+                                  &body ,with-body)
+                   `(,',call-funcion-name
+                     (named-lambda ,',(format-symbol *package* "~A-BODY" name) ,(list ,@inner-arguments/fn-body)
+                       ,@,with-body)
+                     ,,@(lambda-list-to-funcall-list fn-args)))))))))))
 
 (def (definer e :available-flags "eo") with-macro (name args &body body)
   "(def with-macro with-foo (arg1 arg2)
