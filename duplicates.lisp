@@ -257,8 +257,9 @@ be interned into the current package at the time of calling."
                          (declare (ignore entry default))
                          (case kind
                            (&key
-                            (push external-name result)
-                            (push name result))
+                            (unless rest-variable-name
+                              (push external-name result)
+                              (push name result)))
                            (&allow-other-keys)
                            (&rest (setf rest-variable-name name))
                            (t (push name result)))))
@@ -284,8 +285,10 @@ be interned into the current package at the time of calling."
                            ((nil) (push name primaries)))))
     (values `(,@(nreverse primaries)
               ,@(when optionals (cons '&optional (nreverse optionals)))
-              ,@(when keywords (cons '&key (nreverse keywords)))
-              ,@(when allow-other-keys? (list '&allow-other-keys)))
+              ,@(if rest-variable-name
+                    `(&rest ,rest-variable-name)
+                    (when keywords (cons '&key (nreverse keywords))))
+              ,@(when (and allow-other-keys? (not rest-variable-name)) (list '&allow-other-keys)))
             rest-variable-name)))
 
 ;; from dwim-utils

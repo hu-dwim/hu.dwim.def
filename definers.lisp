@@ -292,26 +292,29 @@ like #'eq and 'eq."
                    (inner-arguments/fn-body (mapcar #'second processed-inner-arguments)))
               (dolist (arg args-to-remove-from-fn)
                 (removef fn-args arg))
-              `(progn
-                 (defun ,call-funcion-name (,fn ,@fn-args)
-                   (declare (type function ,fn))
-                   ,@(function-like-definer-declarations -options-)
-                   (flet ((-body- (,@inner-arguments/macro-body)
-                            (funcall ,fn ,@inner-arguments/macro-body)))
-                     (declare (inline -body-))
-                     (block ,name
-                       ,@body)))
-                 (defmacro ,name (,@(when (or args must-have-args)
-                                          (bind ((macro-args (lambda-list-to-lambda-list-with-quoted-defaults
-                                                              args)))
-                                            (if flat
-                                                macro-args
-                                                (list macro-args))))
-                                  &body ,with-body)
-                   `(,',call-funcion-name
-                     (named-lambda ,',(format-symbol *package* "~A-BODY" name) ,(list ,@inner-arguments/fn-body)
-                       ,@,with-body)
-                     ,,@(lambda-list-to-funcall-list fn-args)))))))))))
+              (bind (((:values funcall-list rest-variable-name) (lambda-list-to-funcall-list fn-args))
+                     (body-fn-name (format-symbol *package* "~A-BODY" name)))
+                `(progn
+                   (defun ,call-funcion-name (,fn ,@fn-args)
+                     (declare (type function ,fn))
+                     ,@(function-like-definer-declarations -options-)
+                     (flet ((-body- (,@inner-arguments/macro-body)
+                              (funcall ,fn ,@inner-arguments/macro-body)))
+                       (declare (inline -body-))
+                       (block ,name
+                         ,@body)))
+                   (defmacro ,name (,@(when (or args must-have-args)
+                                            (bind ((macro-args (lambda-list-to-lambda-list-with-quoted-defaults
+                                                                args)))
+                                              (if flat
+                                                  macro-args
+                                                  (list macro-args))))
+                                    &body ,with-body)
+                     `(,',call-funcion-name
+                       (named-lambda ,',body-fn-name ,(list ,@inner-arguments/fn-body)
+                         ,@,with-body)
+                       ,,@funcall-list
+                       ,@,rest-variable-name)))))))))))
 
 (def (definer e :available-flags "eo") with-macro (name args &body body)
   "(def with-macro with-foo (arg1 arg2)
