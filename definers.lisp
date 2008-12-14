@@ -270,7 +270,8 @@ like #'eq and 'eq."
                        form)))
           (setf body (process-body body))
           (when (eq inner-arguments 'undefined)
-            (error "Please insert at least one (-body-) form in the body of a with-macro to invoke the user provided body!"))
+            (simple-style-warning "You probably want to have at least one (-body-) form in the body of a WITH-MACRO to invoke the user provided body...")
+            (setf inner-arguments nil))
           (bind ((args-to-remove-from-fn ())
                  (fn-args args)
                  (processed-inner-arguments
