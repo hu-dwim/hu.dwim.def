@@ -318,7 +318,7 @@ like #'eq and 'eq."
                        ,,@funcall-list
                        ,@,rest-variable-name)))))))))))
 
-(def (definer e :available-flags "eo") with-macro (name args &body body)
+(def (definer e :available-flags "eod") with-macro (name args &body body)
   "(def with-macro with-foo (arg1 arg2)
      (let ((*zyz* 42)
            (local 43))
@@ -329,7 +329,7 @@ like #'eq and 'eq."
      (...))"
   (expand-with-macro name args body -options- #t #f))
 
-(def (definer e :available-flags "eo") with-macro* (name args &body body)
+(def (definer e :available-flags "eod") with-macro* (name args &body body)
   "(def with-macro* with-foo (arg1 arg2 &key alma)
      (let ((*zyz* 42)
            (local 43))
