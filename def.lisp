@@ -101,7 +101,8 @@
     ,@(when (getf -options- :inline)
        `((declaim (inline ,,name))))
     ,@(when (getf -options- :export)
-       `((export ',,name)))
+       `((eval-when (:compile-toplevel :load-toplevel :execute)
+           (export ',,name))))
     ,,@body))
 
 (defmacro with-class-definer-options (name slots &body body)

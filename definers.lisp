@@ -39,7 +39,8 @@
          (locally
              ,@outer-declarations
            ,@(when (getf -options- :export)
-                   `((export ',name)))
+                   `((eval-when (:compile-toplevel :load-toplevel :execute)
+                       (export ',name))))
            (,def-macro-name ,name ,args
              ,@(when documentation
                      (list documentation))
