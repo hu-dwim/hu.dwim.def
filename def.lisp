@@ -27,7 +27,7 @@
       (setf (values definer found) (gethash (string name) *definers*)))
     (when (and errorp
                (not found))
-      (error "No definer for ~S" name))
+      (error "There's no cl-def definer for ~S" name))
     (values definer found)))
 
 (defun (setf find-definer) (value name &key (if-exists :warn))
