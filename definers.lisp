@@ -36,6 +36,8 @@
       `(progn
          ,@(when (getf -options- :inline)
                  `((declaim (inline ,name))))
+         ,@(when (getf -options- :debug)
+                 `((declaim (notinline ,name))))
          (locally
              ,@outer-declarations
            ,@(when (getf -options- :export)
