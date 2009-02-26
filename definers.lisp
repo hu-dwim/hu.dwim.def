@@ -294,7 +294,7 @@ like #'eq and 'eq."
                     (push (second el) inner-arguments/fn-body))
                   (progn
                     (push el inner-arguments/macro-body)
-                    (push el inner-arguments/fn-body))))
+                    (push `(quote ,el) inner-arguments/fn-body))))
             (bind ()
               (dolist (arg args-to-remove-from-fn)
                 (removef fn-args arg))
@@ -317,7 +317,7 @@ like #'eq and 'eq."
                                                   (list macro-args))))
                                     &body ,with-body)
                      `(,',call-funcion-name
-                       (named-lambda ,',body-fn-name ,',inner-arguments/fn-body
+                       (named-lambda ,',body-fn-name ,(list ,@inner-arguments/fn-body)
                          ,@,with-body)
                        ,,@funcall-list
                        ,@,rest-variable-name)))))))))))
