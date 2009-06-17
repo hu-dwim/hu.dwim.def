@@ -25,11 +25,11 @@
 (in-package #:cl-def.system)
 
 (defsystem :cl-def
-  :version "0.1"
+  :version "1.0"
   :author ("Attila Lendvai <attila.lendvai@gmail.com>"
 	   "Levente Mészáros <levente.meszaros@gmail.com>")
   :licence "BSD / Public domain"
-  :description "cl-def - (def function ioe name (arg1) ...)"
+  :description "cl-def - example: (def (function ioe) name (arg) forms)"
   :depends-on (:alexandria :iterate :metabang-bind :cl-syntax-sugar)
   :class system-with-readtable
   :default-component-class cl-source-file-with-readtable
