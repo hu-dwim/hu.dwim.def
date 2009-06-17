@@ -242,35 +242,39 @@ like #'eq and 'eq."
       (bind ((call-funcion-name (format-symbol *package* "CALL-~A" name))
              (inner-arguments 'undefined))
         (labels ((process-body (form)
-                   (if (consp form)
-                       (cond
-                         ((eq (first form) '-body-)
-                          (unless (or (eq inner-arguments 'undefined)
-                                      (equal inner-arguments (rest form)))
-                            (error "Used -BODY- multiple times and they have different argument lists: ~S, ~S" inner-arguments (rest form)))
-                          (setf inner-arguments (rest form))
-                          ;; use an flet instead `(funcall ,fn ,@inner-arguments) so that #'-body- is also possible
-                          `(,(first form) ,@(mapcar (lambda (el)
-                                                      (first (ensure-list el)))
-                                                    (rest form))))
-                         ((and (eq (first form) 'function)
-                               (eq (second form) '-body-)
-                               (length= 2 form))
-                          ;; shut up if there's a #'-body- somewhere
+                   (cond ((consp form)
+                          (cond
+                            ((eq (first form) '-body-)
+                             (unless (or (eq inner-arguments 'undefined)
+                                         (equal inner-arguments (rest form)))
+                               (error "Used -BODY- multiple times and they have different argument lists: ~S, ~S" inner-arguments (rest form)))
+                             (setf inner-arguments (rest form))
+                             ;; use an flet instead `(funcall ,fn ,@inner-arguments) so that #'-body- is also possible
+                             `(,(first form) ,@(mapcar (lambda (el)
+                                                         (first (ensure-list el)))
+                                                       (rest form))))
+                            ((and (eq (first form) 'function)
+                                  (eq (second form) '-body-)
+                                  (length= 2 form))
+                             ;; shut up if there's a #'-body- somewhere
+                             (setf inner-arguments nil)
+                             form)
+                            (t
+                             (iter (for entry :first form :then (cdr entry))
+                                   (collect (process-body (car entry)) :into result)
+                                   (cond
+                                     ((consp (cdr entry))
+                                      ;; nop, go on looping
+                                      )
+                                     ((cdr entry)
+                                      (setf (cdr (last result)) (cdr entry))
+                                      (return result))
+                                     (t (return result)))))))
+                         ((typep form 'standard-object)
+                          ;; NOTE: to avoid warning for quasi-quote literal STANDARD-OBJECT AST nodes wrapping -body-
                           (setf inner-arguments nil)
                           form)
-                         (t
-                          (iter (for entry :first form :then (cdr entry))
-                                (collect (process-body (car entry)) :into result)
-                                (cond
-                                  ((consp (cdr entry))
-                                   ;; nop, go on looping
-                                   )
-                                  ((cdr entry)
-                                   (setf (cdr (last result)) (cdr entry))
-                                   (return result))
-                                  (t (return result))))))
-                       form)))
+                         (t form))))
           (setf body (process-body body))
           (when (eq inner-arguments 'undefined)
             (simple-style-warning "You probably want to have at least one (-body-) form in the body of a WITH-MACRO to invoke the user provided body...")
