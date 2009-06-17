@@ -13,7 +13,10 @@
 (def (definer :available-flags "do") "TEST" ()
   (function-like-definer -definer- 'stefil:deftest -whole- -environment- -options-))
 
-(def definer stefil::suite (name &rest args)
+(def (definer :available-flags "e") stefil::suite (name &rest args)
   `(stefil:defsuite ,name ,@args))
 
-(integrated-export 'stefil::suite :cl-def)
+(def (definer :available-flags "e") stefil::fixture (name &body body)
+  `(stefil:defixture ,name ,@body))
+
+(integrated-export '(stefil::suite stefil::fixture) :cl-def)
