@@ -67,6 +67,11 @@
   :components ((:module :integration
                         :components ((:file "cl-l10n")))))
 
+(defsystem-connection cl-def-and-cl-yalog
+  :requires (:cl-def :cl-yalog)
+  :components ((:module :integration
+                        :components ((:file "cl-yalog")))))
+
 (defsystem :cl-def-test
   :description "Tests for the cl-def test system."
   :depends-on (:cl-def :stefil)
