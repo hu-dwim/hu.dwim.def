@@ -1,10 +1,10 @@
 ;;; -*- mode: Lisp; Syntax: Common-Lisp; -*-
 ;;;
-;;; Copyright (c) 2007 by the authors.
+;;; Copyright (c) 2009 by the authors.
 ;;;
 ;;; See LICENCE for details.
 
-(in-package :cl-def)
+(in-package :hu.dwim.def)
 
 (defun warn-redefining-definer (name)
   (simple-style-warning "Redefining definer ~S" name))
@@ -27,7 +27,7 @@
       (setf (values definer found) (gethash (string name) *definers*)))
     (when (and errorp
                (not found))
-      (error "There's no cl-def definer for ~S" name))
+      (error "There's no hu.dwim.def definer for ~S" name))
     (values definer found)))
 
 (defun (setf find-definer) (value name &key (if-exists :warn))

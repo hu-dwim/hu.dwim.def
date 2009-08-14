@@ -1,10 +1,10 @@
 ;;; -*- mode: Lisp; Syntax: Common-Lisp; -*-
 ;;;
-;;; Copyright (c) 2007 by the authors.
+;;; Copyright (c) 2009 by the authors.
 ;;;
 ;;; See LICENCE for details.
 
-(in-package :cl-def)
+(in-package :hu.dwim.def)
 
 (def (definer :available-flags "eod") contextl:layered-method ()
   (function-like-definer -definer- 'contextl:define-layered-method -whole- -environment- -options-))
@@ -30,4 +30,4 @@
 
 (dolist (symbol '(contextl:layered-method
                   contextl:layered-function))
-  (integrated-export symbol :cl-def))
+  (integrated-export symbol :hu.dwim.def))

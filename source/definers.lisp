@@ -1,19 +1,25 @@
 ;;; -*- mode: Lisp; Syntax: Common-Lisp; -*-
 ;;;
-;;; Copyright (c) 2007 by the authors.
+;;; Copyright (c) 2009 by the authors.
 ;;;
 ;;; See LICENCE for details.
 
-(in-package :cl-def)
+(in-package :hu.dwim.def)
 
 (defun function-definer-option-transformer (name)
   (bind ((name (find-symbol "TRANSFORM-FUNCTION-DEFINER-OPTIONS"
                             (symbol-package (if (consp name)
                                                 (second name)
                                                 name)))))
-    (when (and name
-               (fboundp name))
-      (fdefinition name))))
+    (if (and name
+             (fboundp name))
+        (fdefinition name)
+        #'transform-function-definer-options)))
+
+(defun transform-function-definer-options (options)
+  (if *load-as-production?*
+      options
+      (remove-from-plist options :inline :optimize)))
 
 (defun function-like-definer-declarations (-options-)
   (if (getf -options- :debug)
@@ -349,9 +355,10 @@ like #'eq and 'eq."
   (expand-with-macro name args body -options- #f #t))
 
 (def (definer e :available-flags "e") with/without (name)
-  (bind ((variable-name (concatenate-symbol "*" name "*"))
-         (with-macro-name (concatenate-symbol "with-" name))
-         (without-macro-name (concatenate-symbol "without-" name)))
+  (bind ((package (symbol-package name))
+         (variable-name (format-symbol package "*~A*" name))
+         (with-macro-name (format-symbol package "WITH-~A" name))
+         (without-macro-name (format-symbol package "WITHOUT-~A" name)))
     `(progn
        ,@(when (getf -options- :export)
                `((export '(,variable-name ,with-macro-name ,without-macro-name))))

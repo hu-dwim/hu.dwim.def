@@ -1,22 +1,10 @@
 ;;; -*- mode: Lisp; Syntax: Common-Lisp; -*-
 ;;;
-;;; Copyright (c) 2007 by the authors.
+;;; Copyright (c) 2009 by the authors.
 ;;;
 ;;; See LICENCE for details.
 
-(in-package :cl-def)
-
-(defpackage :cl-def-test
-    (:use :common-lisp :cl-def :metabang-bind :alexandria :iterate :stefil)
-  (:shadow)
-  (:export #:test))
-
-(eval-always
-  (import
-   '(enable-sharp-boolean-syntax rebind eval-always)
-   (find-package :cl-def-test)))
-
-(in-package :cl-def-test)
+(in-package :hu.dwim.def.test)
 
 (defsuite* (test :in root-suite))
 
@@ -63,7 +51,7 @@
 (deftest test/constant ()
   (is (equal '(progn
                (eval-when (:compile-toplevel :load-toplevel :execute)
-                 (defconstant +foo+ (cl-def::%reevaluate-constant '+foo+ 1 :test 'eql)
+                 (defconstant +foo+ (hu.dwim.def::%reevaluate-constant '+foo+ 1 :test 'eql)
                    "documentation")))
              (macroexpand-1 '(def constant +foo+ 1 "documentation")))))
 
@@ -126,4 +114,3 @@
              (with-foo5 (zork 2 :bar 6 :baz 42)
                (is (= zork 4))
                (is (= *foo* 10))))))
-

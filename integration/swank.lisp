@@ -1,10 +1,10 @@
 ;;; -*- mode: Lisp; Syntax: Common-Lisp; -*-
 ;;;
-;;; Copyright (c) 2007 by the authors.
+;;; Copyright (c) 2009 by the authors.
 ;;;
 ;;; See LICENCE for details.
 
-(in-package :cl-def)
+(in-package :hu.dwim.def)
 
 (defun definer-lookup-hook (form)
   (when (typep form 'definer-name)
@@ -15,4 +15,4 @@
   (pushnew 'definer-lookup-hook (symbol-value it)))
 
 (register-readtable-for-swank
- '("CL-DEF" "CL-DEF-TEST") 'setup-readtable)
+ '(:hu.dwim.def :hu.dwim.def.test) 'setup-readtable)
