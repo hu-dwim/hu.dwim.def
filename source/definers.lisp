@@ -370,6 +370,22 @@ like #'eq and 'eq."
          `(let ((,',variable-name #f))
             ,@forms)))))
 
+(def (definer e :available-flags "e") namespace (name args &body forms)
+  (bind ((package (symbol-package name))
+         (variable-name (format-symbol package "*~AS*" name))
+         (finder-name (format-symbol package "FIND-~A" name)))
+    `(progn
+       ,@(when (getf -options- :export)
+               `((export '(,variable-name ,finder-name))))
+       (defvar ,variable-name (make-hash-table :test #'eq))
+       (defun ,finder-name (name)
+         (or (gethash name ,variable-name)
+             (error "Cannot find ~A in namespace ~A" name ',name)))
+       (defun (setf ,finder-name) (value name)
+         (setf (gethash name ,variable-name) value))
+       (def (definer ,@-options-) ,name (name ,@args)
+         `(setf (,',finder-name ',name) ,,@forms)))))
+
 (def (definer e :available-flags "e") boolean-slot (class-name flag-slot-name slot-name)
   "Example:
 \(def class clazz ()
