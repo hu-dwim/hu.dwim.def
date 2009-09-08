@@ -34,10 +34,6 @@
 (defmacro aprog1 (ret &body body)
   `(prog1-bind it ,ret ,@body))
 
-(defmacro eval-always (&body body)
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-    ,@body))
-
 ;; from arnesi
 (defmacro defprint-object ((self class-name &key (identity t) (type t) with-package)
                            &body body)

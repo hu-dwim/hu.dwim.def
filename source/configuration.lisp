@@ -12,6 +12,7 @@
 (defun setup-readtable ()
   (enable-sharp-boolean-syntax))
 
+#+nil
 #+#.(cl:when (cl:find-package "SWANK") '(:and))
 (register-readtable-for-swank
  '(:hu.dwim.def) 'setup-readtable)
