@@ -373,16 +373,21 @@ like #'eq and 'eq."
 (def (definer e :available-flags "e") namespace (name args &body forms)
   (bind ((package (symbol-package name))
          (variable-name (format-symbol package "*~AS*" name))
-         (finder-name (format-symbol package "FIND-~A" name)))
+         (finder-name (format-symbol package "FIND-~A" name))
+         (collector-name (format-symbol package "COLLECT-~AS" name)))
     `(progn
        ,@(when (getf -options- :export)
-               `((export '(,variable-name ,finder-name))))
-       (defvar ,variable-name (make-hash-table :test #'eq))
-       (defun ,finder-name (name)
+               `((export '(,variable-name ,finder-name ,collector-name))))
+       (defvar ,variable-name (make-hash-table :test ,(or (getf -options- :test) '#'eq)))
+       (defun ,finder-name (name &key (otherwise nil otherwise?))
          (or (gethash name ,variable-name)
-             (error "Cannot find ~A in namespace ~A" name ',name)))
+             (if otherwise?
+                 otherwise
+                 (error "Cannot find ~A in namespace ~A" name ',name))))
        (defun (setf ,finder-name) (value name)
          (setf (gethash name ,variable-name) value))
+       (defun ,collector-name ()
+         (hash-table-values ,variable-name))
        (def (definer ,@-options-) ,name (name ,@args)
          `(setf (,',finder-name ',name) ,,@forms)))))
 
