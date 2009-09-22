@@ -17,22 +17,13 @@
     `(let ((,var ,test))
        (if ,var ,then ,else))))
 
-(defmacro aif (test then &optional else)
-  `(if-bind it ,test ,then ,else))
-
 (defmacro when-bind (var test &body body)
   `(if-bind ,var ,test (progn ,@body)))
-
-(defmacro awhen (test &body body)
-  `(when-bind it ,test ,@body))
 
 (defmacro prog1-bind (var ret &body body)
   `(let ((,var ,ret))
     ,@body
     ,var))
-
-(defmacro aprog1 (ret &body body)
-  `(prog1-bind it ,ret ,@body))
 
 ;; from arnesi
 (defmacro defprint-object ((self class-name &key (identity t) (type t) with-package)
