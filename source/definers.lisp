@@ -150,9 +150,9 @@ like #'eq and 'eq."
                            under ~S.~:@>" name old new test)))))))
 
 (def (definer e :available-flags "e") constant (name initial-value &optional documentation)
-  "Use like: (def (constant e :test #'string=) alma \"korte\")"
+  "Use like: (def (constant e :test #'string=) alma \"korte\") test defaults to equal."
   (check-type name symbol)
-  (bind ((test (getf -options- :test ''eql)))
+  (bind ((test (getf -options- :test ''equal)))
     (with-standard-definer-options name
       `(eval-when (:compile-toplevel :load-toplevel :execute)
          (defconstant ,name (%reevaluate-constant ',name ,initial-value :test ,test)
