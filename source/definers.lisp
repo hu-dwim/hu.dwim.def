@@ -305,6 +305,8 @@ like #'eq and 'eq."
                   (progn
                     (push el inner-arguments/macro-body)
                     (push `(quote ,el) inner-arguments/fn-body))))
+            (reversef inner-arguments/macro-body)
+            (reversef inner-arguments/fn-body)
             (bind ()
               (dolist (arg args-to-remove-from-fn)
                 (removef fn-args arg))
