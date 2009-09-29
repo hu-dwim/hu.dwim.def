@@ -100,6 +100,11 @@
     (-body- (local new-var-name))
     (list* keyword-defaulting args)))
 
+(def with-macro* with-foo6 (arg1 arg2 arg2-new-name)
+  (let* ((arg1 (* 2 arg1))
+         (arg2 (+ 2 arg2 )))
+    (-body- arg1 (arg2 arg2-new-name))))
+
 (deftest test/with-macro ()
   (with-foo1 42
     (is (= *foo* 42)))
@@ -115,4 +120,9 @@
   (is (equal '(4 :bar 6 :baz 42)
              (with-foo5 (zork 2 :bar 6 :baz 42)
                (is (= zork 4))
-               (is (= *foo* 10))))))
+               (is (= *foo* 10)))))
+  (bind ((x 2)
+         (y 10))
+    (with-foo6 (x y bar)
+      (is (= arg1 4))
+      (is (= bar 12)))))
