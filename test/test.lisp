@@ -10,9 +10,10 @@
 
 (deftest test/function ()
   (is (equal '(progn
-               (declaim (inline foo))
+               (declaim (notinline foo))
                (locally (declare (optimize (speed 0) (debug 3)))
-                 (export 'foo)
+                 (eval-when (:compile-toplevel :load-toplevel :execute)
+                   (export 'foo))
                  (defun foo (bar baz unused)
                    "documentation"
                    (declare (ignore unused))
@@ -24,9 +25,10 @@
 
 (deftest test/method ()
   (is (equal '(progn
-               (locally
-                   (declare (optimize (speed 0) (debug 3)))
-                 (export 'foo)
+               (declaim (notinline foo))
+               (locally (declare (optimize (speed 0) (debug 3)))
+                 (eval-when (:compile-toplevel :load-toplevel :execute)
+                   (export 'foo))
                  (defmethod foo ((bar integer) (baz string) unused)
                    "documentation"
                    (declare (ignore unused))
@@ -51,7 +53,7 @@
 (deftest test/constant ()
   (is (equal '(progn
                (eval-when (:compile-toplevel :load-toplevel :execute)
-                 (defconstant +foo+ (hu.dwim.def::%reevaluate-constant '+foo+ 1 :test 'eql)
+                 (defconstant +foo+ (hu.dwim.def::%reevaluate-constant '+foo+ 1 :test 'equal)
                    "documentation")))
              (macroexpand-1 '(def constant +foo+ 1 "documentation")))))
 
