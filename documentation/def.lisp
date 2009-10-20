@@ -6,11 +6,26 @@
 
 (in-package :hu.dwim.def.documentation)
 
-;; usage example in your init.el:
-;;
-;; (add-to-list 'load-path (expand-file-name "~/workspace/hu.dwim.def/emacs/"))
-;;
-;; (require 'hu.dwim.def)
+(def project :hu.dwim.def :path (system-pathname :hu.dwim.def))
+
+(def book user-guide (:title "User guide")
+  (chapter (:title "Introduction")
+    "TODO")
+  (chapter (:title "Supported Common Lisp Implementations")
+    (paragraph ()
+      "SBCL"))
+  (chapter (:title "Supported Operating Systems")
+    (paragraph ()
+      "Linux"))
+  (chapter (:title "Tutorial")
+    (paragraph ()
+      "TODO")))
+
+#|
+usage example in your init.el:
+
+(add-to-list 'load-path (expand-file-name "~/workspace/hu.dwim.def/emacs/"))
+(require 'hu.dwim.def)
 
 You may want to add this to your emacs setup:
 
@@ -35,3 +50,4 @@ And maybe this to lisp-font-lock-keywords-2
  (1 font-lock-keyword-face)
  (2 font-lock-type-face)
  (3 font-lock-function-name-face))
+|#

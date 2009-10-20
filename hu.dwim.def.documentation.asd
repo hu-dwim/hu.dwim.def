@@ -9,11 +9,14 @@
 (in-package :hu.dwim.asdf)
 
 (defsystem :hu.dwim.def.documentation
+  :class hu.dwim.documentation-system
+  :author ("Attila Lendvai <attila.lendvai@gmail.com>"
+           "Levente Mészáros <levente.meszaros@gmail.com>"
+           "Tamás Borbély <tomi.borbely@gmail.com>")
+  :licence "BSD / Public domain"
   :description "Documentation for hu.dwim.def"
-  :depends-on (:hu.dwim.def
-               :hu.dwim.stefil
-               :hu.dwim.def
-               :hu.dwim.walker
-               :swank)
+  :depends-on (:hu.dwim.def.test
+               :hu.dwim.wui)
   :components ((:module "documentation"
-                :components ((:file "package")))))
+                :components ((:file "def" :depends-on ("package"))
+                             (:file "package")))))
