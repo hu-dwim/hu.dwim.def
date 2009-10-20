@@ -8,7 +8,7 @@
 
 (defpackage :hu.dwim.def
   (:use :hu.dwim.asdf
-        :hu.dwim.common-lisp
+        :hu.dwim.common
         :hu.dwim.syntax-sugar)
 
   (:export #:def

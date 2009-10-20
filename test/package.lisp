@@ -7,6 +7,6 @@
 (in-package :common-lisp-user)
 
 (defpackage :hu.dwim.def.test
-  (:use :hu.dwim.common-lisp
+  (:use :hu.dwim.common
         :hu.dwim.def
         :hu.dwim.stefil))
