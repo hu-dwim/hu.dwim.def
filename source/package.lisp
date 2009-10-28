@@ -15,6 +15,7 @@
            #:definer
            #:find-definer
            #:with-standard-definer-options
+           #:function-like-definer-declarations
 
            #:-whole-
            #:-environment-
