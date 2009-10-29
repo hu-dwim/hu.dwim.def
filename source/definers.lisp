@@ -113,6 +113,28 @@ like #'eq and 'eq."
     `(deftype ,name ,args
        ,@forms)))
 
+(defmacro with-class-definer-options (name slots &body body)
+  ``(progn
+    ,@(when (getf -options- :export)
+       `((export ',,name)))
+    ,@(awhen (and (getf -options- :export-slot-names)
+                  (mapcar (lambda (slot)
+                            (first (ensure-list slot)))
+                          ,slots))
+       `((export ',it)))
+    ,@(awhen (and (getf -options- :export-accessor-names)
+                  (iter (for slot :in slots)
+                        (setf slot (ensure-list slot))
+                        (for slot-options = (rest slot))
+                        (awhen (getf slot-options :accessor)
+                          (collect it))
+                        (awhen (getf slot-options :reader)
+                          (collect it))
+                        (awhen (getf slot-options :writer)
+                          (collect it))))
+       `((export ',it)))
+    ,,@body))
+
 (def (definer :available-flags "eas") class (name supers slots &rest options)
   "Example that exports all the class name and all the readers, writers and slot names:
     (def (class eas) foo \(bar baz)
