@@ -153,6 +153,27 @@ like #'eq and 'eq."
        ,slots
        ,@options)))
 
+(defmacro with-structure-definer-options (name slots &body body)
+  ``(progn
+    ,@(when (getf -options- :export)
+       `((export ',,name)))
+    ,@(awhen (and (getf -options- :export-slot-names)
+                  (mapcar (lambda (slot)
+                            (first (ensure-list slot)))
+                          ,slots))
+       `((export ',it)))
+    ;; TODO support exporting accessors, constructor, whatelse?
+    ,,@body))
+
+(def (definer :available-flags "eas") structure (name &body slots)
+  (bind ((documentation (when (stringp (first slots))
+                          (pop slots))))
+    (with-structure-definer-options name slots
+      `(defstruct ,name
+         ,@(when documentation
+             (list documentation))
+         ,@slots))))
+
 (defun %reevaluate-constant (name value &key (test 'eql))
   (if (not (boundp name))
       value
