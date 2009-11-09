@@ -27,7 +27,8 @@
       (setf (values definer found) (gethash (string name) *definers*)))
     (when (and errorp
                (not found))
-      (error "There's no hu.dwim.def definer for ~S" name))
+      (error (bind ((*package* (find-package "KEYWORD")))
+               (format nil "There's no hu.dwim.def definer for ~S" name))))
     (values definer found)))
 
 (defun (setf find-definer) (value name &key (if-exists :warn))
