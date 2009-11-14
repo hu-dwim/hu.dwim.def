@@ -416,13 +416,14 @@ like #'eq and 'eq."
             ,@forms)))))
 
 (def (definer e :available-flags "e") namespace (name args &body forms)
+  ;; TODO add keyword to optionally create a locked global. currently namespaces are not threadsafe...
   (bind ((variable-name (symbolicate "*" name '#:-namespace*))
          (finder-name (symbolicate '#:find- name))
-         ;; KLUDGE this plural is broken as is; should be renamed or removed.
-         (collector-name (symbolicate '#:collect- name '#:s)))
+         (collector-name (symbolicate '#:collect- name '#:-namespace-values))
+         (iterator-name (symbolicate '#:iterate- name '#:-namespace)))
     `(progn
        ,@(when (getf -options- :export)
-               `((export '(,variable-name ,finder-name ,collector-name))))
+               `((export '(,variable-name ,finder-name ,collector-name ,iterator-name))))
        (defvar ,variable-name (make-hash-table :test ,(or (getf -options- :test) '#'eq)))
        (defun ,finder-name (name &key (otherwise nil otherwise?))
          (or (gethash name ,variable-name)
@@ -433,6 +434,8 @@ like #'eq and 'eq."
          (setf (gethash name ,variable-name) value))
        (defun ,collector-name ()
          (hash-table-values ,variable-name))
+       (defun ,iterator-name (visitor)
+         (maphash visitor ,variable-name))
        (def (definer ,@-options-) ,name (name ,@args)
          `(setf (,',finder-name ',name) ,,@forms)))))
 
