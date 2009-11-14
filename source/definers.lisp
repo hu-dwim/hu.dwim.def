@@ -416,10 +416,10 @@ like #'eq and 'eq."
             ,@forms)))))
 
 (def (definer e :available-flags "e") namespace (name args &body forms)
-  (bind ((package (symbol-package name))
-         (variable-name (format-symbol package "*~AS*" name))
-         (finder-name (format-symbol package "FIND-~A" name))
-         (collector-name (format-symbol package "COLLECT-~AS" name)))
+  (bind ((variable-name (symbolicate "*" name '#:-namespace*))
+         (finder-name (symbolicate '#:find- name))
+         ;; KLUDGE this plural is broken as is; should be renamed or removed.
+         (collector-name (symbolicate '#:collect- name '#:s)))
     `(progn
        ,@(when (getf -options- :export)
                `((export '(,variable-name ,finder-name ,collector-name))))
