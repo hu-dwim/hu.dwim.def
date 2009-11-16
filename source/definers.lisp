@@ -271,20 +271,19 @@ like #'eq and 'eq."
          ;; primary PRINT-OBJECT methods are supposed to return the object
          -self-))))
 
-(defun simple-lambda-list-p (args)
-  (parse-lambda-list args
-                     (lambda (kind name entry &optional external-name default)
-                       (declare (ignore name entry external-name default))
-                       (when (member kind '(&rest &optional &key &allow-other-keys))
-                         (return-from simple-lambda-list-p #f))))
-  #t)
+(defun simple-lambda-list? (args)
+  (bind (((:values nil optionals rest keywords allow-other-keys?) (parse-ordinary-lambda-list args)))
+    (and (not rest)
+         (not optionals)
+         (not keywords)
+         (not allow-other-keys?))))
 
 ;; TODO it should check if the &key and &optional args of the macro part were provided and
 ;; only forward them if when they were. otherwise let the function's default forms kick in.
 ;; currently you need to C-c C-c all usages if the default values changed incompatibly.
 (defun expand-with-macro (name args body -options- flat must-have-args)
   (unless (or (not flat)
-              (simple-lambda-list-p args))
+              (simple-lambda-list? args))
     (error "Can not generate a flat with-macro when using &rest, &optional or &key in its lambda list. Use with-macro* for that."))
   (with-unique-names (fn with-body)
     (with-standard-definer-options name
