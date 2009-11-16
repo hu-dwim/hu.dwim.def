@@ -19,6 +19,7 @@
   :components ((:module "source"
                 :components ((:file "configuration" :depends-on ("package"))
                              (:file "def" :depends-on ("configuration" "duplicates"))
-                             (:file "definers" :depends-on ("def"))
+                             (:file "definers" :depends-on ("definers-early"))
+                             (:file "definers-early" :depends-on ("def"))
                              (:file "duplicates" :depends-on ("package"))
                              (:file "package")))))
