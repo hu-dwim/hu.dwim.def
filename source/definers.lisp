@@ -343,9 +343,9 @@
          `(let ((,',variable-name #f))
             ,@forms)))))
 
-(def (definer e :available-flags "e") namespace (name args &body forms)
-  ;; TODO add keyword to optionally create a locked global. currently namespaces are not threadsafe...
+(def (definer e :available-flags "e") namespace (name &optional args &body forms)
   (bind ((variable-name (symbolicate "*" name '#:-namespace*))
+         (lock-variable-name (symbolicate "%" name '#:-namespace-lock%))
          (finder-name (symbolicate '#:find- name))
          (collector-name (symbolicate '#:collect- name '#:-namespace-values))
          (iterator-name (symbolicate '#:iterate- name '#:-namespace)))
@@ -353,17 +353,22 @@
        ,@(when (getf -options- :export)
                `((export '(,variable-name ,finder-name ,collector-name ,iterator-name))))
        (defvar ,variable-name (make-hash-table :test ,(or (getf -options- :test) '#'eq)))
-       (defun ,finder-name (name &key (otherwise nil otherwise?))
-         (or (gethash name ,variable-name)
+       (defvar ,lock-variable-name (make-lock :name ,(concatenate 'string "lock for " (string variable-name))))
+       (def function ,finder-name (name &key (otherwise nil otherwise?))
+         (or (with-lock ,lock-variable-name
+               (gethash name ,variable-name))
              (if otherwise?
                  otherwise
                  (error "Cannot find ~A in namespace ~A" name ',name))))
-       (defun (setf ,finder-name) (value name)
-         (setf (gethash name ,variable-name) value))
-       (defun ,collector-name ()
-         (hash-table-values ,variable-name))
-       (defun ,iterator-name (visitor)
-         (maphash visitor ,variable-name))
+       (def function (setf ,finder-name) (value name)
+         (with-lock ,lock-variable-name
+           (setf (gethash name ,variable-name) value)))
+       (def function ,collector-name ()
+         (with-lock ,lock-variable-name
+           (hash-table-values ,variable-name)))
+       (def function ,iterator-name (visitor)
+         (with-lock ,lock-variable-name
+           (maphash visitor ,variable-name)))
        (def (definer ,@-options-) ,name (name ,@args)
          `(setf (,',finder-name ',name) ,,@forms)))))
 
