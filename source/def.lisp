@@ -115,7 +115,7 @@
             (setf name-and-options (ensure-list name-and-options))
             (with-unique-names (name)
               `(progn
-                (eval-when (:compile-toplevel :load-toplevel)
+                (eval-when (:compile-toplevel :load-toplevel :execute)
                   (bind ((,name ',(first name-and-options)))
                     ;;(break "~S" expander-forms)
                     ,@(when (getf options :export)
