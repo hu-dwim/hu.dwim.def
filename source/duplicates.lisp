@@ -32,6 +32,28 @@
     (shadowing-import symbol other-package)
     (export symbol other-package)))
 
+;; from contextl
+(locally #+sbcl(declare (sb-ext:muffle-conditions style-warning sb-ext:compiler-note))
+(defun make-lock (&key name)
+  (or
+   #+allegro (mp:make-process-lock :name name)
+   #+clozure-common-lisp (ccl:make-lock name)
+   #+(and cmu mp) (mp:make-lock name)
+   #+lispworks (mp:make-lock :name name)
+   #+(and sbcl sb-thread) (sb-thread:make-mutex :name name)
+   (error "Threading on your lisp is not supported in hu.dwim.def")))
+
+(defmacro with-lock (lock &body body)
+  (or
+   #+allegro `(mp:with-process-lock (,lock) ,@body)
+   #+clozure-common-lisp `(ccl:with-lock-grabbed (,lock) ,@body)
+   #+(and cmu mp) `(mp:with-lock-held (,lock) ,@body)
+   #+lispworks `(mp:with-lock (,lock) ,@body)
+   #+(and sbcl sb-thread) `(sb-thread:with-recursive-lock (,lock) ,@body)
+   (error "Threading on your lisp is not supported in hu.dwim.def")))
+)
+
+
 ;;;;;;
 ;;; lambda list processing from stefil
 
