@@ -6,7 +6,7 @@
 
 (in-package :hu.dwim.def)
 
-(defun definer-lookup-hook (form)
+(def function definer-lookup-hook (form)
   (when (typep form 'definer-name)
     (awhen (find-definer form nil)
       (values it t))))
