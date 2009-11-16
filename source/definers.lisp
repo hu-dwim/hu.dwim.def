@@ -38,14 +38,6 @@
                `((export ',name)))
        (defgeneric ,name ,@body))))
 
-(defun extract-function-name (spec)
-  "Useful for macros that want to emulate the functional interface for functions
-like #'eq and 'eq."
-  (if (and (consp spec)
-           (member (first spec) '(quote function)))
-      (second spec)
-      spec))
-
 (def (definer :available-flags "e") type (name args &body forms)
   (with-standard-definer-options name
     `(deftype ,name ,args
