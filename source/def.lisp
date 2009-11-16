@@ -99,8 +99,6 @@
 
 (defmacro with-standard-definer-options (name &body body)
   ``(progn
-    ,@(when (getf -options- :inline)
-       `((declaim (inline ,,name))))
     ,@(when (getf -options- :export)
        `((eval-when (:compile-toplevel :load-toplevel :execute)
            (export ',,name))))
