@@ -37,7 +37,7 @@
          (args (pop body)))
     (awhen (find-function-definer-option-transformer name)
       (setf -options- (funcall it -options-)))
-    (bind (((:values body declarations documentation) (parse-body body :documentation #t :whole -whole-))
+    (bind (((:values body declarations documentation) (parse-body body :documentation t :whole -whole-))
            (outer-declarations (function-like-definer-declarations -options-)))
       `(progn
          ,@(when (getf -options- :inline)

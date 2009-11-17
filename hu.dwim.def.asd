@@ -15,10 +15,12 @@
            "Tamás Borbély <tomi.borbely@gmail.com>")
   :licence "BSD / Public domain"
   :description "General purpose, extensible definer macro."
-  :depends-on (:hu.dwim.syntax-sugar)
+  :depends-on (:alexandria
+               :anaphora
+               :iterate
+               :metabang-bind)
   :components ((:module "source"
-                :components ((:file "configuration" :depends-on ("package"))
-                             (:file "def" :depends-on ("configuration" "duplicates"))
+                :components ((:file "def" :depends-on ("duplicates"))
                              (:file "definers" :depends-on ("definers-early"))
                              (:file "definers-early" :depends-on ("def"))
                              (:file "duplicates" :depends-on ("package"))

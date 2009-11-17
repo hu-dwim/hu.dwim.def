@@ -7,9 +7,12 @@
 (in-package :common-lisp-user)
 
 (defpackage :hu.dwim.def
-  (:use :hu.dwim.asdf
-        :hu.dwim.common
-        :hu.dwim.syntax-sugar)
+  (:use :alexandria
+        :anaphora
+        :common-lisp
+        :hu.dwim.asdf
+        :iterate
+        :metabang-bind)
 
   (:export #:def
            #:definer

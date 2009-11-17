@@ -182,7 +182,7 @@
   (with-unique-names (stream printing)
     (bind ((args (ensure-list class-name*))
            ((class-name &key (identity t) (type t) with-package (muffle-errors t)) args)
-           ((:values body declarations documentation) (parse-body body :documentation #t :whole whole)))
+           ((:values body declarations documentation) (parse-body body :documentation t :whole whole)))
       `(defmethod print-object ((-self- ,class-name) ,stream)
          ,@(when documentation
              (list documentation))
@@ -333,7 +333,7 @@
    Example:
    (with-foo arg1 arg2
      (...))"
-  (expand-with-macro name args body -options- #t #f))
+  (expand-with-macro name args body -options- t nil))
 
 (def (definer e :available-flags "eod") with-macro* (name args &body body)
   "(def with-macro* with-foo (arg1 arg2 &key alma)
@@ -344,7 +344,7 @@
    Example:
    (with-foo (arg1 arg2 :alma alma)
      (...))"
-  (expand-with-macro name args body -options- #f #t))
+  (expand-with-macro name args body -options- nil t))
 
 (def (definer e :available-flags "e") with/without (name)
   (bind ((package (symbol-package name))
@@ -356,10 +356,10 @@
                `((export '(,variable-name ,with-macro-name ,without-macro-name))))
        (defvar ,variable-name)
        (defmacro ,with-macro-name (&body forms)
-         `(let ((,',variable-name #t))
+         `(let ((,',variable-name t))
             ,@forms))
        (defmacro ,without-macro-name (&body forms)
-         `(let ((,',variable-name #f))
+         `(let ((,',variable-name nil))
             ,@forms)))))
 
 (def (definer e :available-flags "e") namespace (name &optional args &body forms)

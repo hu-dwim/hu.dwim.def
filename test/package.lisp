@@ -7,6 +7,10 @@
 (in-package :common-lisp-user)
 
 (defpackage :hu.dwim.def.test
-  (:use :hu.dwim.common
+  (:use :alexandria
+        :anaphora
+        :common-lisp
+        :hu.dwim.asdf
         :hu.dwim.def
-        :hu.dwim.stefil))
+        :iterate
+        :metabang-bind))

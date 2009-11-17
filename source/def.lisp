@@ -18,7 +18,7 @@
 ;; TODO this is not thread-safe, but we don't want to depend on bordeaux-threads
 (defparameter *definers* (make-hash-table :test #'equal))
 
-(defun find-definer (name &optional (errorp #t))
+(defun find-definer (name &optional (errorp t))
   (check-type name definer-name)
   (bind (((:values definer found) (gethash name *definers*)))
     (unless found
@@ -51,7 +51,7 @@
    (available-flags :initform nil :initarg :available-flags :accessor available-flags-of)
    (defined-at-compile-time :initform nil :type boolean :accessor defined-at-compile-time?)))
 
-(defprint-object (self definer :identity #f :type #f)
+(defprint-object (self definer :identity nil :type nil)
   (format t "definer ~S" (name-of self)))
 
 (defmethod initialize-instance :after ((self definer) &key &allow-other-keys)
@@ -77,22 +77,22 @@
             (if (member flag (available-flags-of definer) :test #'char=)
                 (ecase flag
                   (#\i
-                   (push #t options)
+                   (push t options)
                    (push :inline options))
                   (#\o
-                   (push #t options)
+                   (push t options)
                    (push :optimize options))
                   (#\e
-                   (push #t options)
+                   (push t options)
                    (push :export options))
                   (#\d
-                   (push #t options)
+                   (push t options)
                    (push :debug options))
                   (#\a
-                   (push #t options)
+                   (push t options)
                    (push :export-accessor-names options))
                   (#\s
-                   (push #t options)
+                   (push t options)
                    (push :export-slot-names options)))
                 (error "Flag '~A' is not available for definer ~S" flag (name-of definer)))))
     (values name options)))
@@ -111,7 +111,7 @@
           (setf -whole- (copy-seq -whole-))
           (bind (((name-and-options args &rest body) (nthcdr 2 -whole-))
                  ((:values nil options) (parse-definer-name-and-options -whole- definer-definer))
-                 ((:values body declarations doc-string) (parse-body body :documentation #t :whole -whole-)))
+                 ((:values body declarations doc-string) (parse-body body :documentation t :whole -whole-)))
             (setf name-and-options (ensure-list name-and-options))
             (with-unique-names (name)
               `(progn
