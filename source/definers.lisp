@@ -227,9 +227,6 @@
             funcall-list
             rest-variable-name)))
 
-;; TODO it should check if the &key and &optional args of the macro part were provided and
-;; only forward them if when they were. otherwise let the function's default forms kick in.
-;; currently you need to C-c C-c all usages if the default values changed incompatibly.
 (def function expand-with-macro (name args body -options- flat? must-have-args?)
   (flet ((simple-lambda-list? (args)
            (bind (((:values nil optionals rest keywords allow-other-keys?) (parse-ordinary-lambda-list args)))
@@ -373,7 +370,7 @@
          (iterator-name (symbolicate '#:iterate- name '#:-namespace)))
     `(progn
        ,@(when (getf -options- :export)
-               `((export '(,variable-name ,finder-name ,collector-name ,iterator-name))))
+           `((export '(,variable-name ,finder-name ,collector-name ,iterator-name))))
        (defvar ,variable-name (make-hash-table :test ,(or (getf -options- :test) '#'eq)))
        (defvar ,lock-variable-name (make-lock :name ,(concatenate 'string "lock for " (string variable-name))))
        (def function ,finder-name (name &key (otherwise nil otherwise?))
@@ -393,4 +390,3 @@
            (maphash visitor ,variable-name)))
        (def (definer ,@-options-) ,name (name ,@args)
          `(setf (,',finder-name ',name) ,,@forms)))))
-
