@@ -201,32 +201,58 @@
          ;; primary PRINT-OBJECT methods are supposed to return the object
          -self-))))
 
+(def function expand-with-macro/compute-macro-arguments (args fn-args)
+  (bind ((macro-args nil)
+         (funcall-list nil)
+         (rest-variable-name nil))
+    (bind (((:values requireds optionals rest keywords allow-other-keys?) (parse-ordinary-lambda-list args)))
+      (setf macro-args `(,@requireds
+                         ,@(when optionals (cons '&optional optionals))
+                         ,@(if rest
+                               `(&rest ,rest)
+                               (when keywords (cons '&key keywords)))
+                         ,@(when (and allow-other-keys? (not rest))
+                                 (list '&allow-other-keys)))))
+    (bind (((:values requireds optionals rest keywords) (parse-ordinary-lambda-list fn-args)))
+      (setf funcall-list (append requireds
+                                 (loop
+                                   :for entry :in optionals
+                                   :collect (first entry))
+                                 (unless rest
+                                   (loop
+                                     :for entry :in keywords
+                                     :appending (list (first (first entry)) (second (first entry)))))))
+      (setf rest-variable-name rest))
+    (values macro-args
+            funcall-list
+            rest-variable-name)))
+
 ;; TODO it should check if the &key and &optional args of the macro part were provided and
 ;; only forward them if when they were. otherwise let the function's default forms kick in.
 ;; currently you need to C-c C-c all usages if the default values changed incompatibly.
-(def function expand-with-macro (name args body -options- flat must-have-args)
+(def function expand-with-macro (name args body -options- flat? must-have-args?)
   (flet ((simple-lambda-list? (args)
            (bind (((:values nil optionals rest keywords allow-other-keys?) (parse-ordinary-lambda-list args)))
              (and (not rest)
                   (not optionals)
                   (not keywords)
                   (not allow-other-keys?)))))
-    (unless (or (not flat)
+    (unless (or (not flat?)
                 (simple-lambda-list? args))
       (error "Can not generate a flat with-macro when using &rest, &optional or &key in its lambda list. Use with-macro* for that.")))
   (with-unique-names (fn with-body)
     (with-standard-definer-options name
       (bind ((call-funcion-name (format-symbol *package* "CALL-~A" name))
-             (inner-arguments 'undefined))
+             (body-invocation-arguments 'undefined))
         (labels ((process-body (form)
                    (cond ((consp form)
                           (cond
                             ((eq (first form) '-body-)
-                             (unless (or (eq inner-arguments 'undefined)
-                                         (equal inner-arguments (rest form)))
-                               (error "Used -BODY- multiple times and they have different argument lists: ~S, ~S" inner-arguments (rest form)))
-                             (setf inner-arguments (rest form))
-                             ;; use an flet instead `(funcall ,fn ,@inner-arguments) so that #'-body- is also possible
+                             (unless (or (eq body-invocation-arguments 'undefined)
+                                         (equal body-invocation-arguments (rest form)))
+                               (error "Used -BODY- multiple times and they have different argument lists: ~S, ~S" body-invocation-arguments (rest form)))
+                             (setf body-invocation-arguments (rest form))
+                             ;; use an flet instead of `(funcall ,fn ,@body-invocation-arguments) so that #'-body- also works as expected
                              `(,(first form) ,@(mapcar (lambda (el)
                                                          (first (ensure-list el)))
                                                        (rest form))))
@@ -234,7 +260,7 @@
                                   (eq (second form) '-body-)
                                   (length= 2 form))
                              ;; shut up if there's a #'-body- somewhere
-                             (setf inner-arguments nil)
+                             (setf body-invocation-arguments nil)
                              form)
                             (t
                              (iter (for entry :first form :then (cdr entry))
@@ -249,18 +275,18 @@
                                      (t (return result)))))))
                          ((typep form 'standard-object)
                           ;; NOTE: to avoid warning for quasi-quote literal STANDARD-OBJECT AST nodes wrapping -body-
-                          (setf inner-arguments nil)
+                          (setf body-invocation-arguments nil)
                           form)
                          (t form))))
           (setf body (process-body body))
-          (when (eq inner-arguments 'undefined)
+          (when (eq body-invocation-arguments 'undefined)
             (simple-style-warning "You probably want to have at least one (-body-) form in the body of a WITH-MACRO to invoke the user provided body...")
-            (setf inner-arguments nil))
+            (setf body-invocation-arguments nil))
           (bind ((args-to-remove-from-fn ())
                  (fn-args args)
                  (inner-arguments/macro-body ())
                  (inner-arguments/fn-body ()))
-            (dolist (el inner-arguments)
+            (dolist (el body-invocation-arguments)
               (if (consp el)
                   (progn
                     (unless (and (length= 2 el)
@@ -269,7 +295,7 @@
                                                (not (symbolp part))
                                                (member part '(&rest &optional &key &allow-other-keys))))
                                          el))
-                      (error "The arguemnts used to invoke (-body- foo1 foo2) may only contain symbols, or (with-macro-body-name lexically-visible-name) pairs denoting variables that are \"transferred\" from the call site in the with-macro into the lexical scope of the user provided body."))
+                      (error "The arguments used to invoke (-body- foo1 foo2) may only contain symbols, or (var-name-inside-macro-body lexically-visible-var-name-for-user-forms) pairs denoting variables that are \"transferred\" from the lexical scope of the with-macro into the lexical scope of the user provided body forms."))
                     (push (second el) args-to-remove-from-fn)
                     (push (first el) inner-arguments/macro-body)
                     (push (second el) inner-arguments/fn-body))
@@ -281,7 +307,7 @@
             (bind ()
               (dolist (arg args-to-remove-from-fn)
                 (removef fn-args arg))
-              (bind (((:values funcall-list rest-variable-name) (lambda-list-to-funcall-list fn-args))
+              (bind (((:values macro-args funcall-list rest-variable-name) (expand-with-macro/compute-macro-arguments args fn-args))
                      (body-fn-name (format-symbol *package* "~A-BODY" name)))
                 `(progn
                    (defun ,call-funcion-name (,fn ,@fn-args)
@@ -292,12 +318,8 @@
                        (declare (inline -body-))
                        (block ,name
                          ,@body)))
-                   (defmacro ,name (,@(when (or args must-have-args)
-                                            (bind ((macro-args (lambda-list-to-lambda-list-with-quoted-defaults
-                                                                args)))
-                                              (if flat
-                                                  macro-args
-                                                  (list macro-args))))
+                   (defmacro ,name (,@(when (or args must-have-args?)
+                                        (if flat? macro-args (list macro-args)))
                                     &body ,with-body)
                      `(,',call-funcion-name
                        (named-lambda ,',body-fn-name ,(list ,@inner-arguments/fn-body)

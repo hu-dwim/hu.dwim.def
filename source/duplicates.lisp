@@ -52,30 +52,3 @@
    #+(and sbcl sb-thread) `(sb-thread:with-recursive-lock (,lock) ,@body)
    (error "Threading on your lisp is not supported in hu.dwim.def")))
 )
-
-
-;;;;;;
-;;; lambda list processing from stefil
-
-(defun lambda-list-to-funcall-list (args)
-  (bind (((:values requireds optionals rest keywords) (parse-ordinary-lambda-list args)))
-    (values (append requireds
-                    (loop
-                      :for entry :in optionals
-                      :collect (first entry))
-                    (unless rest
-                      (loop
-                        :for entry :in keywords
-                        :appending (list (first (first entry)) (second (first entry))))))
-            rest)))
-
-(defun lambda-list-to-lambda-list-with-quoted-defaults (args)
-  (bind (((:values requireds optionals rest keywords allow-other-keys?) (parse-ordinary-lambda-list args)))
-    (values `(,@requireds
-              ,@(when optionals (cons '&optional optionals))
-              ,@(if rest
-                    `(&rest ,rest)
-                    (when keywords (cons '&key keywords)))
-              ,@(when (and allow-other-keys? (not rest))
-                  (list '&allow-other-keys)))
-            rest)))
