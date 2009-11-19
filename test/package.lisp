@@ -12,5 +12,6 @@
         :common-lisp
         :hu.dwim.asdf
         :hu.dwim.def
+        :hu.dwim.stefil
         :iterate
         :metabang-bind))

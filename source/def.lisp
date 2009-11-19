@@ -31,17 +31,17 @@
                (format nil "There's no hu.dwim.def definer for ~S" name))))
     (values definer found)))
 
-(defun (setf find-definer) (value name &key (if-exists :warn))
+(defun (setf find-definer) (new-value name &key (if-exists :warn))
   (check-type name definer-name)
   (check-type if-exists (member :warn :replace))
-  (bind ((definer (gethash name *definers*)))
-    (when (and value
-               definer
+  (bind ((old-value (gethash name *definers*)))
+    (when (and new-value
+               old-value
                (eq if-exists :warn)
-               (not (defined-at-compile-time? definer)))
+               (not (defined-at-compile-time? old-value)))
       (warn-redefining-definer name))
-    (if value
-        (setf (gethash name *definers*) value)
+    (if new-value
+        (setf (gethash name *definers*) new-value)
         (remhash name *definers*))))
 
 (defclass definer ()

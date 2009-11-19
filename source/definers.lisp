@@ -370,6 +370,7 @@
          (iterator-name (symbolicate '#:iterate- name '#:-namespace)))
     `(progn
        ,@(when (getf -options- :export)
+           ;; TODO why is variable-name exported? it advertises usage, while that's not really a good idea...
            `((export '(,variable-name ,finder-name ,collector-name ,iterator-name))))
        (defvar ,variable-name (make-hash-table :test ,(or (getf -options- :test) '#'eq)))
        (defvar ,lock-variable-name (make-lock :name ,(concatenate 'string "lock for " (string variable-name))))
