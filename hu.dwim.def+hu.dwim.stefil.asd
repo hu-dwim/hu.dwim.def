@@ -14,7 +14,7 @@
            "Tamás Borbély <tomi.borbely@gmail.com>"
            "Levente Mészáros <levente.meszaros@gmail.com>")
   :licence "BSD / Public domain"
-  :depends-on (:hu.dwim.def
+  :depends-on (:hu.dwim.def+swank ; for convenience also load the extension that tells swank about the extended-packages
                :hu.dwim.stefil)
   :components ((:module "integration"
                 :components ((:file "stefil")))))

@@ -24,4 +24,5 @@
                              (:file "definers" :depends-on ("definers-early"))
                              (:file "definers-early" :depends-on ("def"))
                              (:file "duplicates" :depends-on ("package"))
+                             (:file "extended-package" :depends-on ("definers"))
                              (:file "package")))))
