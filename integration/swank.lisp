@@ -25,6 +25,8 @@
   (pushnew 'definer-lookup-hook (symbol-value it)))
 
 (def function notify-swank-about-package-readtable (extended-package)
+  (when (symbolp extended-package)
+    (setf extended-package (find-extended-package (string extended-package))))
   (awhen (readtable-setup-form-of extended-package)
     (register-readtable-for-swank (name-of extended-package)
                                   (bind ((*readtable* (copy-readtable *readtable*)))
