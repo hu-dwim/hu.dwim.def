@@ -7,6 +7,7 @@
 (in-package :hu.dwim.def)
 
 (def (function e) register-readtable-for-swank (package-names readtable)
+  (check-type readtable readtable)
   (dolist (package-name (ensure-list package-names))
     (setf package-name (string package-name))
     (let ((entry (find package-name swank:*readtable-alist* :test #'string= :key #'car)))
