@@ -362,32 +362,40 @@
          `(let ((,',variable-name nil))
             ,@forms)))))
 
-(def (definer e :available-flags "e") namespace (name &optional args &body forms)
-  (bind ((variable-name (symbolicate "*" name '#:-namespace*))
-         (lock-variable-name (symbolicate "%" name '#:-namespace-lock%))
-         (finder-name (symbolicate '#:find- name))
+(def (definer e :available-flags "e") namespace (name &optional definer-args &body definer-forms)
+  (bind ((hashtable-var (symbolicate "*" name '#:-namespace*))
+         (lock-var (symbolicate "%" name '#:-namespace-lock%))
+         (finder-name (or (getf -options- :finder-name) (symbolicate '#:find- name)))
          (collector-name (symbolicate '#:collect- name '#:-namespace-values))
-         (iterator-name (symbolicate '#:iterate- name '#:-namespace)))
+         (iterator-name (symbolicate '#:iterate- name '#:-namespace))
+         (global-var-definer #+sbcl 'sb-ext:defglobal
+                             #-sbcl 'defvar)
+         (test-function (or (getf -options- :test) '#'eq)))
+    (remove-from-plistf -options- :test :finder-name)
     `(progn
        ,@(when (getf -options- :export)
            ;; TODO why is variable-name exported? it advertises usage, while that's not really a good idea...
            `((export '(,variable-name ,finder-name ,collector-name ,iterator-name))))
-       (defvar ,variable-name (make-hash-table :test ,(or (getf -options- :test) '#'eq)))
-       (defvar ,lock-variable-name (make-lock :name ,(concatenate 'string "lock for " (string variable-name))))
+       (,global-var-definer ,hashtable-var (make-hash-table :test ,test-function))
+       (,global-var-definer ,lock-var (make-lock :name ,(concatenate 'string "lock for " (string hashtable-var))))
        (def function ,finder-name (name &key (otherwise nil otherwise?))
-         (or (with-lock ,lock-variable-name
-               (gethash name ,variable-name))
+         (or (with-lock ,lock-var
+               (gethash name ,hashtable-var))
              (if otherwise?
                  otherwise
                  (error "Cannot find ~A in namespace ~A" name ',name))))
        (def function (setf ,finder-name) (value name)
-         (with-lock ,lock-variable-name
-           (setf (gethash name ,variable-name) value)))
+         (with-lock ,lock-var
+           (if value
+               (setf (gethash name ,hashtable-var) value)
+               (remhash name ,hashtable-var))))
        (def function ,collector-name ()
-         (with-lock ,lock-variable-name
-           (hash-table-values ,variable-name)))
+         (with-lock ,lock-var
+           (hash-table-values ,hashtable-var)))
        (def function ,iterator-name (visitor)
-         (with-lock ,lock-variable-name
-           (maphash visitor ,variable-name)))
-       (def (definer ,@-options-) ,name (name ,@args)
-         `(setf (,',finder-name ',name) ,,@forms)))))
+         (with-lock ,lock-var
+           (maphash visitor ,hashtable-var)))
+       ,@(unless (and (zerop (length definer-args))
+                      (zerop (length definer-forms)))
+          `((def (definer ,@-options-) ,name (name ,@definer-args)
+              `(setf (,',finder-name ',name) ,,@definer-forms)))))))
