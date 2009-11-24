@@ -374,8 +374,7 @@
     (remove-from-plistf -options- :test :finder-name)
     `(progn
        ,@(when (getf -options- :export)
-           ;; TODO why is variable-name exported? it advertises usage, while that's not really a good idea...
-           `((export '(,variable-name ,finder-name ,collector-name ,iterator-name))))
+           `((export '(,finder-name ,collector-name ,iterator-name))))
        (,global-var-definer ,hashtable-var (make-hash-table :test ,test-function))
        (,global-var-definer ,lock-var (make-lock :name ,(concatenate 'string "lock for " (string hashtable-var))))
        (def function ,finder-name (name &key (otherwise nil otherwise?))
