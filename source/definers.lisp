@@ -98,7 +98,7 @@
 (def (definer :available-flags "eas") structure (name &body slots)
   (bind ((documentation (when (stringp (first slots))
                           (pop slots))))
-    (with-structure-definer-options name slots
+    (with-structure-definer-options (first (ensure-list name)) slots
       `(defstruct ,name
          ,@(when documentation
              (list documentation))
