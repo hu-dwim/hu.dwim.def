@@ -83,23 +83,23 @@
        ,slots
        ,@options)))
 
-(def macro with-structure-definer-options (name slots &body body)
-  ``(progn
-    ,@(when (getf -options- :export)
-       `((export ',,name)))
-    ,@(awhen (and (getf -options- :export-slot-names)
-                  (mapcar (lambda (slot)
-                            (first (ensure-list slot)))
-                          ,slots))
-       `((export ',it)))
-    ;; TODO support exporting accessors, constructor, whatelse?
-    ,,@body))
-
 (def (definer :available-flags "eas") structure (name &body slots)
   (bind ((documentation (when (stringp (first slots))
-                          (pop slots))))
-    (with-structure-definer-options (first (ensure-list name)) slots
-      `(defstruct ,name
+                          (pop slots)))
+         (options (rest (ensure-list name)))
+         (real-name (first (ensure-list name))))
+    `(progn
+       ,@(when (getf -options- :export)
+           (bind ((constructor (aif (assoc-value options :constructor)
+                                    (first it)
+                                    (symbolicate '#:make- real-name))))
+             `((export '(,real-name ,constructor)))))
+       ,@(awhen (and (getf -options- :export-slot-names)
+                     (mapcar (lambda (slot)
+                               (first (ensure-list slot)))
+                             slots))
+            `((export ',it)))
+       (defstruct ,name
          ,@(when documentation
              (list documentation))
          ,@slots))))
