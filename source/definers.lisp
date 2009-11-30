@@ -403,3 +403,14 @@
                       (zerop (length definer-forms)))
           `((def (definer ,@-options-) ,name (name ,@definer-args)
               `(setf (,',finder-name ',name) ,,@definer-forms)))))))
+
+(def (definer e :available-flags "e") global (name value &optional documentation)
+  (assert (not (and documentation (getf -options- :documentation))) () "Multiple documentations for ~S" -whole-)
+  (setf documentation (or documentation (getf -options- :documentation)))
+  (bind ((global-definer-name #+sbcl 'sb-ext:defglobal
+                              #-sbcl 'defvar))
+    (with-standard-definer-options name
+      `(progn
+        ,@(when documentation
+            `((setf (documentation ',name 'variable) ,documentation)))
+        (,global-definer-name ,name ,value)))))
