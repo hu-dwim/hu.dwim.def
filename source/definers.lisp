@@ -84,24 +84,28 @@
        ,@options)))
 
 (def (definer :available-flags "eas") structure (name &body slots)
-  (bind ((documentation (when (stringp (first slots))
-                          (pop slots)))
-         (options (rest (ensure-list name)))
-         (real-name (first (ensure-list name))))
+  (bind ((original-name name)
+         (name (first (ensure-list original-name)))
+         (options (rest (ensure-list original-name)))
+         (documentation (when (stringp (first slots))
+                          (pop slots))))
+    (when (and documentation (getf -options- :documentation))
+      (error "Multiple documentations for ~S" -whole-))
+    (setf documentation (or documentation (getf -options- :documentation)))
     `(progn
        ,@(when (getf -options- :export)
            (bind ((constructor (aif (assoc-value options :constructor)
                                     (first it)
-                                    (symbolicate '#:make- real-name))))
-             `((export '(,real-name ,constructor)))))
+                                    (symbolicate '#:make- name))))
+             `((export '(,name ,constructor)))))
        ,@(awhen (and (getf -options- :export-slot-names)
                      (mapcar (lambda (slot)
                                (first (ensure-list slot)))
                              slots))
             `((export ',it)))
-       (defstruct ,name
-         ,@(when documentation
-             (list documentation))
+       ,@(when documentation
+           `((setf (documentation ',name 'structure) ,documentation)))
+       (defstruct ,original-name
          ,@slots))))
 
 (def function %reevaluate-constant (name value &key (test 'eql))
