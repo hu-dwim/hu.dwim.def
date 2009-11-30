@@ -9,7 +9,7 @@
 ;;;;;;
 ;;; define a (def package ...) that can store custom package options into the namespace called extended-package
 
-(def (namespace e :test 'equal) extended-package)
+(def (dumb-namespace e :test 'equal) extended-package)
 
 (def special-variable *extended-package-definition-hooks* nil)
 

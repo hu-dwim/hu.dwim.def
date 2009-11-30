@@ -366,7 +366,8 @@
          `(let ((,',variable-name nil))
             ,@forms)))))
 
-(def (definer e :available-flags "e") namespace (name &optional definer-args &body definer-forms)
+;; TODO this is very much a duplicate, but it's used by (def extended-package ...) and :hu.dwim.def.namespace brings in too many (circular) dependencies at too many places...
+(def (definer :available-flags "e") dumb-namespace (name &optional definer-args &body definer-forms)
   (bind ((hashtable-var (symbolicate "*" name '#:-namespace*))
          (lock-var (symbolicate "%" name '#:-namespace-lock%))
          (finder-name (or (getf -options- :finder-name) (symbolicate '#:find- name)))
