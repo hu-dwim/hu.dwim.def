@@ -43,6 +43,12 @@
     `(deftype ,name ,args
        ,@forms)))
 
+(def (definer e :available-flags "e") member-type (name &body values)
+  `(def (type ,@-options-) ,name ()
+     ,(if (length= values 1)
+          ``(eql ,@',values)
+          ``(member ,@',values))))
+
 (def macro with-class-definer-options (name slots &body body)
   ``(progn
     ,@(when (getf -options- :export)
