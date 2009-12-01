@@ -10,11 +10,7 @@
 
 (defsystem :hu.dwim.def
   :class hu.dwim.system
-  :author ("Attila Lendvai <attila.lendvai@gmail.com>"
-           "Levente Mészáros <levente.meszaros@gmail.com>"
-           "Tamás Borbély <tomi.borbely@gmail.com>")
-  :licence "BSD / Public domain"
-  :description "General purpose, extensible definer macro."
+  :description "General purpose, homogenous, extensible definer macro."
   :depends-on (:alexandria
                :anaphora
                :iterate
