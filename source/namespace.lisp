@@ -34,6 +34,7 @@
        (def function ,collector-name ()
          (bordeaux-threads:with-recursive-lock-held (,lock-var)
            (hash-table-values ,hashtable-var)))
+       ;; TODO add a do- iterator macro
        (def function ,iterator-name (visitor)
          (bordeaux-threads:with-recursive-lock-held (,lock-var)
            (maphash visitor ,hashtable-var)))
