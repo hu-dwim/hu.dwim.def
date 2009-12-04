@@ -181,6 +181,32 @@
          (defmethod initialize-instance :after ((-self- ,class-name) &key ,@key-args)
            ,@body)))))
 
+(def (definer e) iterator (&whole whole name args &body body)
+  (bind ((iterator-name (symbolicate '#:iterate- name))
+         (do-name (symbolicate '#:do- name))
+         (do/body-name (symbolicate '#:do- name '#:/body))
+         ((:values body declarations documentation) (parse-body body :documentation t :whole whole))
+         ((:values macro-args funcall-list rest-variable-name) (expand-with-macro/compute-macro-arguments args)))
+    (with-unique-names (element-var)
+      `(progn
+         ,@(when (getf -options- :export)
+             `((export '(,iterator-name ,do-name))))
+         (def function ,iterator-name (-visitor- ,@args)
+           ,@(when documentation
+                   (list documentation))
+           ,@declarations
+           ,@body)
+         (def macro ,do-name ((,element-var ,@(if rest-variable-name
+                                              `(&rest ,rest-variable-name)
+                                              macro-args))
+                               &body body)
+           `(block nil
+              (flet ((,',do/body-name (,,element-var)
+                       ,@body))
+                ,,(if rest-variable-name
+                      ``(apply ',',iterator-name #',',do/body-name ,rest-variable-name)
+                      ``(,',iterator-name #',',do/body-name ,,@funcall-list)))))))))
+
 (def (definer e) print-object (&whole whole class-name* &body body)
   "Define a PRINT-OBJECT method using PRINT-UNREADABLE-OBJECT.
   An example:
@@ -211,7 +237,7 @@
          ;; primary PRINT-OBJECT methods are supposed to return the object
          -self-))))
 
-(def function expand-with-macro/compute-macro-arguments (args fn-args)
+(def function expand-with-macro/compute-macro-arguments (args &optional (fn-args args))
   (bind ((macro-args nil)
          (funcall-list nil)
          (rest-variable-name nil))
