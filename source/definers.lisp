@@ -209,12 +209,17 @@
   (bind ((macro-args nil)
          (funcall-list nil)
          (rest-variable-name nil))
-    (bind (((:values requireds optionals rest keywords allow-other-keys?) (parse-ordinary-lambda-list args)))
+    (bind (((:values requireds optionals rest keywords allow-other-keys?) (parse-ordinary-lambda-list args :normalize nil)))
       (setf macro-args `(,@requireds
                          ,@(when optionals (cons '&optional optionals))
                          ,@(if rest
                                `(&rest ,rest)
-                               (when keywords (cons '&key keywords)))
+                               (when keywords
+                                 (cons '&key (loop
+                                               :for keyword :in keywords
+                                               :collect (if (consp keyword)
+                                                            (list (first keyword) `(quote ,(second keyword)))
+                                                            keyword)))))
                          ,@(when (and allow-other-keys? (not rest))
                                  (list '&allow-other-keys)))))
     (bind (((:values requireds optionals rest keywords) (parse-ordinary-lambda-list fn-args)))
