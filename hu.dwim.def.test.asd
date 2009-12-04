@@ -12,5 +12,7 @@
   :class hu.dwim.test-system
   :depends-on (:hu.dwim.stefil+hu.dwim.def)
   :components ((:module "test"
-                :components ((:file "package")
-                             (:file "test" :depends-on ("package"))))))
+                :components ((:file "iterator" :depends-on ("suite"))
+                             (:file "package")
+                             (:file "suite" :depends-on ("package"))
+                             (:file "with-macro" :depends-on ("suite"))))))
