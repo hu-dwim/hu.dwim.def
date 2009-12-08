@@ -443,7 +443,7 @@
           `((def (definer ,@-options-) ,name (name ,@definer-args)
               `(setf (,',finder-name ',name) ,,@definer-forms)))))))
 
-(def (definer e :available-flags "e") global (name value &optional documentation)
+(def (definer e :available-flags "e") global-variable (name value &optional documentation)
   (assert (not (and documentation (getf -options- :documentation))) () "Multiple documentations for ~S" -whole-)
   (setf documentation (or documentation (getf -options- :documentation)))
   (bind ((global-definer-name #+sbcl 'sb-ext:defglobal

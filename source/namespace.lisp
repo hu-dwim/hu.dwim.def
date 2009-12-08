@@ -18,8 +18,8 @@
     `(progn
        ,@(when (getf -options- :export)
            `((export '(,finder-name ,collector-name ,iterator-name))))
-       (def global ,hashtable-var (trivial-garbage:make-weak-hash-table :test ,test-function :weakness ,weakness))
-       (def global ,lock-var (bordeaux-threads:make-recursive-lock ,(concatenate 'string "lock for " (string hashtable-var))))
+       (def global-variable ,hashtable-var (trivial-garbage:make-weak-hash-table :test ,test-function :weakness ,weakness))
+       (def global-variable ,lock-var (bordeaux-threads:make-recursive-lock ,(concatenate 'string "lock for " (string hashtable-var))))
        (def function ,finder-name (name &key (otherwise nil otherwise?))
          (bordeaux-threads:with-recursive-lock-held (,lock-var)
            (or (gethash name ,hashtable-var)
