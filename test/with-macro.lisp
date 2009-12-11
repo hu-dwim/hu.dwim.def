@@ -24,12 +24,12 @@
                    (let ((*with-foo/special* foo))
                      (-body-)))
                  (def with-macro with-foo2 (foo bar)
-                   (let* ((local (* 2 foo))
+                   (bind ((local (* 2 foo))
                           (*with-foo/special* (+ local bar)))
                      ;; using this syntax, LOCAL is "transferred" into the lexical scope of the body
                      (-body- local)))
                  (def with-macro* with-foo3 (foo &key bar)
-                   (let* ((local (* 2 foo))
+                   (bind ((local (* 2 foo))
                           (*with-foo/special* (+ local bar)))
                      (-body- local)))
                  (def with-macro* with-foo4 (lexical-var-name foo &key bar)
@@ -42,7 +42,7 @@
                      (-body- (local new-var-name))
                      (list* keyword-defaulting (remove-from-plist args :keyword-defaulting))))
                  (def with-macro* with-foo6 (arg1 arg2 arg2-new-name)
-                   (let* ((arg1 (* 2 arg1))
+                   (bind ((arg1 (* 2 arg1))
                           (arg2 (+ 2 arg2 )))
                      (-body- arg1 (arg2 arg2-new-name))))
 

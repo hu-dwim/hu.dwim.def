@@ -35,15 +35,15 @@
                  (def iterator iterator/1 ()
                    (dotimes (i 4)
                      (funcall -visitor- i)))
-                 (def iterator iterator/2 (arg1 &key divider)
-                   (dotimes (i (/ arg1 divider))
+                 (def iterator iterator/2 (arg1 &key divisor)
+                   (dotimes (i (/ arg1 divisor))
                      (funcall -visitor- i))))))))
 
 (def iterator-test test/iterator/1 (do-iterator/1 (j) '(3 2 1 0))
   (push j -result-))
 
-(def iterator-test test/iterator/2/1 (do-iterator/2 (j 8 :divider 4) '(1 0))
+(def iterator-test test/iterator/2/1 (do-iterator/2 (j 8 :divisor 4) '(1 0))
   (push j -result-))
 
-(def iterator-test test/iterator/2/2 (do-iterator/2 (j 8 :divider 2) '(3 2 1 0))
+(def iterator-test test/iterator/2/2 (do-iterator/2 (j 8 :divisor 2) '(3 2 1 0))
   (push j -result-))
