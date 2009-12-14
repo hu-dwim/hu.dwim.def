@@ -300,7 +300,7 @@
              ((consp form)
               (cond
                 ((eq (first form) '-body-)
-                 (unless (or (eq body-invocation-arguments 'undefined)
+                 (unless (or (member body-invocation-arguments '(undefined ignore))
                              (equal body-invocation-arguments (rest form)))
                    (error "Used -BODY- multiple times and they have different argument lists: ~S, ~S" body-invocation-arguments (rest form)))
                  (setf body-invocation-arguments (rest form))
@@ -326,11 +326,13 @@
                           (return result))
                          (t (return result)))))))
              ((typep form 'standard-object)
-              ;; NOTE: to avoid warning for quasi-quote literal STANDARD-OBJECT AST nodes wrapping -body-
-              (setf body-invocation-arguments nil)
+              ;; FIXME: KLUDGE to avoid a warning when quasi-quote literal STANDARD-OBJECT AST nodes are "hiding" -body- references
+              (setf body-invocation-arguments 'ignore)
               form)
              (t form))))
-      (values (recurse body-form) body-invocation-arguments))))
+      (values (recurse body-form) (if (eq body-invocation-arguments 'ignore)
+                                      nil
+                                      body-invocation-arguments)))))
 
 (def function expand-with-macro (name args body -options- flat? must-have-args?)
   (flet ((simple-lambda-list? (args)
