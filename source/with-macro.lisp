@@ -115,7 +115,9 @@
       (error "Can not generate a flat with-macro when using &rest, &optional or &key in its lambda list. Use with-macro* for that.")))
   (with-unique-names (fn with-body)
     (with-standard-definer-options name
-      (bind ((call-with-fn/name (format-symbol *package* "CALL-~A" name))
+      (bind ((define-function? (getf -options- :define-function t))
+             (define-macro? (getf -options- :define-macro t))
+             (call-with-fn/name (format-symbol *package* "CALL-~A" name))
              ((:values body body-invocation-arguments) (expand-with-macro/process-body body)))
         (when (eq body-invocation-arguments 'undefined)
           (simple-style-warning "You probably want to have at least one (-body-) form in the body of a WITH-MACRO to invoke the user provided body...")
@@ -147,22 +149,24 @@
                                                                         args body-invocation-arguments
                                                                         (ensure-list (getf -options- :quoted-arguments)))))
             `(progn
-               (defun ,call-with-fn/name (,fn ,@call-with-fn/arguments)
-                 (declare (type function ,fn))
-                 ,@(function-like-definer-declarations -options-)
-                 (flet ((-body- (,@lexically-transferred-arguments)
-                          (funcall ,fn ,@lexically-transferred-arguments)))
-                   (declare (inline -body-))
-                   (block ,name
-                     ,@body)))
-               (defmacro ,name (,@(when (or args must-have-args?)
-                                        (if flat? macro-args (list macro-args)))
-                                &body ,with-body)
-                 `(,',call-with-fn/name
-                   (named-lambda ,',(symbolicate name '#:-body) ,(list ,@body-lambda-arguments)
-                     ,@,with-body)
-                   ,@,@funcall-list
-                   ,@,rest-variable-name)))))))))
+               ,(when define-function?
+                  `(defun ,call-with-fn/name (,fn ,@call-with-fn/arguments)
+                     (declare (type function ,fn))
+                     ,@(function-like-definer-declarations -options-)
+                     (flet ((-body- (,@lexically-transferred-arguments)
+                              (funcall ,fn ,@lexically-transferred-arguments)))
+                       (declare (inline -body-))
+                       (block ,name
+                         ,@body))))
+               ,(when define-macro?
+                  `(defmacro ,name (,@(when (or args must-have-args?)
+                                            (if flat? macro-args (list macro-args)))
+                                    &body ,with-body)
+                     `(,',call-with-fn/name
+                       (named-lambda ,',(symbolicate name '#:-body) ,(list ,@body-lambda-arguments)
+                         ,@,with-body)
+                       ,@,@funcall-list
+                       ,@,rest-variable-name))))))))))
 
 (def (definer e :available-flags "eod") with-macro (name args &body body)
   "(def with-macro with-foo (arg1 arg2)
