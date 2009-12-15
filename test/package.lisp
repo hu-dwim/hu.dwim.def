@@ -14,6 +14,4 @@
         :hu.dwim.def
         :hu.dwim.stefil
         :iterate
-        :metabang-bind)
-  (:shadowing-import-from :hu.dwim.def
-                          #:-body-))
+        :metabang-bind))

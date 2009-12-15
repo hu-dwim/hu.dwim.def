@@ -37,7 +37,8 @@
                      (funcall -visitor- i)))
                  (def iterator iterator/2 (arg1 &key divisor)
                    (dotimes (i (/ arg1 divisor))
-                     (funcall -visitor- i))))))))
+                     (funcall -visitor- i)))))))
+  (-body-))
 
 (def iterator-test test/iterator/1 (do-iterator/1 (j) '(3 2 1 0))
   (push j -result-))
