@@ -147,4 +147,3 @@
                 (eval-when (:compile-toplevel)
                   (setf (defined-at-compile-time? (find-definer ',(first name-and-options))) t)))))))
   (setf (find-definer 'definer) definer-definer))
-

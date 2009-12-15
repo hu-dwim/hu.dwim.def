@@ -16,9 +16,11 @@
                :iterate
                :metabang-bind)
   :components ((:module "source"
-                :components ((:file "def" :depends-on ("duplicates"))
+                :components ((:file "infrastructure" :depends-on ("duplicates"))
                              (:file "definers" :depends-on ("definers-early"))
-                             (:file "definers-early" :depends-on ("def"))
+                             (:file "definers-early" :depends-on ("infrastructure"))
                              (:file "duplicates" :depends-on ("package"))
                              (:file "extended-package" :depends-on ("definers"))
-                             (:file "package")))))
+                             (:file "iterator" :depends-on ("definers" "with-macro"))
+                             (:file "package")
+                             (:file "with-macro" :depends-on ("infrastructure"))))))
