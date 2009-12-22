@@ -13,4 +13,4 @@
   :depends-on (:hu.dwim.def
                :hu.dwim.delico)
   :components ((:module "integration"
-                :components ((:file "hu.dwim.delico")))))
+                :components ((:file "delico")))))

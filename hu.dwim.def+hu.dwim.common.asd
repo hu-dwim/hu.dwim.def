@@ -13,4 +13,4 @@
   :depends-on (:hu.dwim.def
                :hu.dwim.common)
   :components ((:module "integration"
-                :components ((:file "hu.dwim.common")))))
+                :components ((:file "common")))))
