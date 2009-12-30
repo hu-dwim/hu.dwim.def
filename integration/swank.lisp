@@ -21,8 +21,10 @@
     (awhen (find-definer form nil)
       (values it t))))
 
-(awhen (find-symbol (symbol-name '#:*inspector-dwim-lookup-hooks*) :swank)
-  (pushnew 'definer-lookup-hook (symbol-value it)))
+(let ((hook-list-symbol (find-symbol (symbol-name '#:*inspector-dwim-lookup-hooks*) :swank)))
+  (when (and hook-list-symbol
+             (boundp hook-list-symbol))
+    (pushnew 'definer-lookup-hook (symbol-value hook-list-symbol))))
 
 (def function notify-swank-about-package-readtable (extended-package)
   (when (symbolp extended-package)
