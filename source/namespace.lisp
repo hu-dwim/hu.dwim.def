@@ -17,7 +17,7 @@
     (remove-from-plistf -options- :test :weakness :finder-name)
     `(progn
        ,@(when (getf -options- :export)
-           `((export '(,finder-name ,collector-name ,iterator-name))))
+           `((export (remove nil '(,finder-name ,collector-name ,iterator-name)))))
        (def global-variable ,hashtable-var (trivial-garbage:make-weak-hash-table :test ,test-function :weakness ,weakness))
        (def global-variable ,lock-var (bordeaux-threads:make-recursive-lock ,(concatenate 'string "lock for " (string hashtable-var))))
        (def function ,finder-name (name &key (otherwise nil otherwise?))
@@ -31,13 +31,15 @@
            (if value
                (setf (gethash name ,hashtable-var) value)
                (remhash name ,hashtable-var))))
-       (def function ,collector-name ()
-         (bordeaux-threads:with-recursive-lock-held (,lock-var)
-           (hash-table-values ,hashtable-var)))
+       ,@(when collector-name
+          `((def function ,collector-name ()
+              (bordeaux-threads:with-recursive-lock-held (,lock-var)
+                (hash-table-values ,hashtable-var)))))
        ;; TODO add a do- iterator macro
-       (def function ,iterator-name (visitor)
-         (bordeaux-threads:with-recursive-lock-held (,lock-var)
-           (maphash visitor ,hashtable-var)))
+       ,@(when iterator-name
+           `((def function ,iterator-name (visitor)
+               (bordeaux-threads:with-recursive-lock-held (,lock-var)
+                 (maphash visitor ,hashtable-var)))))
        ,@(unless (and (zerop (length definer-args))
                       (zerop (length definer-forms)))
           `((def (definer ,@-options-) ,name (name ,@definer-args)
