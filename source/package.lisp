@@ -25,5 +25,6 @@
            #:-definer-
            #:-options-
            #:-body-
+           #:-with-macro/body-
            #:-visitor-
            #:-self-))

@@ -68,19 +68,20 @@
            (cond
              ((consp form)
               (cond
-                ((eq (first form) '-body-)
+                ;; TODO obsolete -body- (search this file for it)
+                ((member (first form) '(-body- -with-macro/body-))
                  (unless (or (member body-invocation-arguments '(undefined ignore))
                              (equal body-invocation-arguments (rest form)))
-                   (error "Used -BODY- multiple times and they have different argument lists: ~S, ~S" body-invocation-arguments (rest form)))
+                   (error "Used -WITH-MACRO/BODY- multiple times and they have different argument lists: ~S, ~S" body-invocation-arguments (rest form)))
                  (setf body-invocation-arguments (rest form))
-                 ;; use an flet instead of `(funcall ,fn ,@body-invocation-arguments) so that #'-body- also works as expected
+                 ;; use an flet instead of `(funcall ,fn ,@body-invocation-arguments) so that #'-with-macro/body- also works as expected
                  `(,(first form) ,@(mapcar (lambda (el)
                                              (first (ensure-list el)))
                                            (rest form))))
                 ((and (eq (first form) 'function)
-                      (eq (second form) '-body-)
+                      (member (second form) '(-body- -with-macro/body-))
                       (length= 2 form))
-                 ;; shut up if there's a #'-body- somewhere
+                 ;; shut up if there's a #'-with-macro/body- somewhere
                  (setf body-invocation-arguments nil)
                  form)
                 (t
@@ -95,7 +96,7 @@
                           (return result))
                          (t (return result)))))))
              ((typep form 'standard-object)
-              ;; FIXME: KLUDGE to avoid a warning when quasi-quote literal STANDARD-OBJECT AST nodes are "hiding" -body- references
+              ;; FIXME: KLUDGE to avoid a warning when quasi-quote literal STANDARD-OBJECT AST nodes are "hiding" -with-macro/body- references
               (setf body-invocation-arguments 'ignore)
               form)
              (t form))))
@@ -120,7 +121,7 @@
              (call-with-fn/name (format-symbol *package* "CALL-~A" name))
              ((:values body body-invocation-arguments) (expand-with-macro/process-body body)))
         (when (eq body-invocation-arguments 'undefined)
-          (simple-style-warning "You probably want to have at least one (-body-) form in the body of a WITH-MACRO to invoke the user provided body...")
+          (simple-style-warning "You probably want to have at least one (-with-macro/body-) form in the body of a WITH-MACRO to invoke the user provided body...")
           (setf body-invocation-arguments nil))
         (bind ((lexically-transferred-arguments '())
                (body-lambda-arguments '())
@@ -136,7 +137,7 @@
                                           (eq (first new-name) 'quote)
                                           (symbolp (second new-name))
                                           (not (cddr new-name))))))
-                    (error "The arguments used to invoke (-body- foo1 foo2) may only contain symbols, or (var-name-inside-macro-body var-name-visible-for-user-forms) pairs denoting variables that are \"transferred\" from the lexical scope of the with-macro into the lexical scope of the user provided body forms (implemented by renaming the fn's argument)."))
+                    (error "The arguments used to invoke (-with-macro/body- foo1 foo2) may only contain symbols, or (var-name-inside-macro-body var-name-visible-for-user-forms) pairs denoting variables that are \"transferred\" from the lexical scope of the with-macro into the lexical scope of the user provided body forms (implemented by renaming the fn's argument)."))
                   (removef call-with-fn/arguments new-name)
                   (push new-name body-lambda-arguments)
                   (push original-name lexically-transferred-arguments))
@@ -153,9 +154,11 @@
                   `(defun ,call-with-fn/name (,fn ,@call-with-fn/arguments)
                      (declare (type function ,fn))
                      ,@(function-like-definer-declarations -options-)
-                     (flet ((-body- (,@lexically-transferred-arguments)
-                              (funcall ,fn ,@lexically-transferred-arguments)))
-                       (declare (inline -body-))
+                     (labels ((-with-macro/body- (,@lexically-transferred-arguments)
+                                (funcall ,fn ,@lexically-transferred-arguments))
+                              (-body- (&rest args)
+                                (apply #'-with-macro/body- args)))
+                       (declare (dynamic-extent #'-with-macro/body-))
                        (block ,name
                          ,@body))))
                ,(when define-macro?
