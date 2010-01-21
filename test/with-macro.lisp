@@ -64,7 +64,7 @@
                        (declare (special argument-list))
                        (-with-macro/body-))
                      (argument-list)))))))
-  (-with-macro/body-))
+  (-body-))
 
 (def definer with-macro-test (name &body body)
   `(def test (,name :compile-before-run t) ()
