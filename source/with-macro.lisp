@@ -119,6 +119,7 @@
       (bind ((define-function? (getf -options- :define-function t))
              (define-macro? (getf -options- :define-macro t))
              (call-with-fn/name (format-symbol *package* "CALL-~A" name))
+             (ignorable-variables '())
              ((:values body body-invocation-arguments) (expand-with-macro/process-body body)))
         (when (eq body-invocation-arguments 'undefined)
           (simple-style-warning "You probably want to have at least one (-with-macro/body-) form in the body of a WITH-MACRO to invoke the user provided body...")
@@ -128,16 +129,18 @@
                (call-with-fn/arguments args))
           (dolist (el body-invocation-arguments)
             (if (consp el)
-                (bind ((original-name (first el))
-                       (new-name (second el)))
-                  (when (or (not (length= 2 el))
-                            (not (symbolp original-name))
+                (bind (((original-name &optional new-name &key ignorable) el))
+                  (unless new-name
+                    (setf new-name `(quote ,original-name)))
+                  (when (or (not (symbolp original-name))
                             (not (or (symbolp new-name)
                                      (and (consp new-name)
                                           (eq (first new-name) 'quote)
                                           (symbolp (second new-name))
                                           (not (cddr new-name))))))
                     (error "The arguments used to invoke (-with-macro/body- foo1 foo2) may only contain symbols, or (var-name-inside-macro-body var-name-visible-for-user-forms) pairs denoting variables that are \"transferred\" from the lexical scope of the with-macro into the lexical scope of the user provided body forms (implemented by renaming the fn's argument)."))
+                  (when ignorable
+                    (push new-name ignorable-variables))
                   (removef call-with-fn/arguments new-name)
                   (push new-name body-lambda-arguments)
                   (push original-name lexically-transferred-arguments))
@@ -167,6 +170,8 @@
                                     &body ,with-body)
                      `(,',call-with-fn/name
                        (named-lambda ,',(symbolicate name '#:-body) ,(list ,@body-lambda-arguments)
+                         ,@,(when ignorable-variables
+                             ``((declare (ignorable ,,@ignorable-variables))))
                          ,@,with-body)
                        ,@,@funcall-list
                        ,@,rest-variable-name))))))))))
