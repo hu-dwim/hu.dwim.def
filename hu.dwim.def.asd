@@ -23,4 +23,4 @@
                              (:file "extended-package" :depends-on ("definers"))
                              (:file "iterator" :depends-on ("definers" "with-macro"))
                              (:file "package")
-                             (:file "with-macro" :depends-on ("infrastructure"))))))
+                             (:file "with-macro" :depends-on ("definers"))))))
