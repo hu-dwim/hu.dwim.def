@@ -15,6 +15,10 @@
 ;;; in the file will be read to CL:IN-PACKAGE, even when after a compile-toplevel shadow of IN-PACKAGE.
 ;;; But take it all with a piece of salt... - lendvai
 
+;; TODO get rid of the ECL kludgery once it's been fixed
+#+ecl
+(progn
+
 (def function expand-in-package (package-name)
   `(progn
      (eval-when (:compile-toplevel :execute)
@@ -34,10 +38,10 @@
     ;; Please don't try using compile.
     (eval `(def macro ,hu.dwim.common/in-package (package-name)
              (expand-in-package package-name)))))
+) ; progn
 
-#||
-
-The above in a bit clearer form (which doesn't work on ECL as of this writing).
+#-ecl
+(progn
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unintern 'common-lisp:in-package :hu.dwim.common)
@@ -57,5 +61,4 @@ The above in a bit clearer form (which doesn't work on ECL as of this writing).
            ;; external forces make sure that *readtable* is rebound, but not that it's copied. keep that in mind when using :setup-readtable for (def package ...)
            (eval it))))
      (common-lisp:in-package ,package-name)))
-
-||#
+) ; progn
