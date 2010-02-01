@@ -16,9 +16,8 @@
 ;;; But take it all with a piece of salt... - lendvai
 
 ;; TODO get rid of the ECL kludgery once it's been fixed
+;; NOTE: these #+'s needs to be separate. wrapping them in a (progn ...) will break it...
 #+ecl
-(progn
-
 (def function expand-in-package (package-name)
   `(progn
      (eval-when (:compile-toplevel :execute)
@@ -29,6 +28,7 @@
            (eval it))))
      (common-lisp:in-package ,package-name)))
 
+#+ecl
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unintern 'common-lisp:in-package :hu.dwim.common)
   (shadow '#:in-package :hu.dwim.common)
@@ -38,20 +38,19 @@
     ;; Please don't try using compile.
     (eval `(def macro ,hu.dwim.common/in-package (package-name)
              (expand-in-package package-name)))))
-) ; progn
 
 #-ecl
-(progn
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unintern 'common-lisp:in-package :hu.dwim.common)
   (shadow "IN-PACKAGE" :hu.dwim.common))
 
+#-ecl
 (eval-when (:compile-toplevel :load-toplevel :execute)
   ;; this export is not inside the above eval-when for a reason.
   (export 'hu.dwim.common::in-package :hu.dwim.common)
   (assert (not (eq 'hu.dwim.common::in-package 'common-lisp:in-package))))
 
+#-ecl
 (def macro hu.dwim.common::in-package (package-name)
   `(progn
      (eval-when (:compile-toplevel :execute)
@@ -61,4 +60,3 @@
            ;; external forces make sure that *readtable* is rebound, but not that it's copied. keep that in mind when using :setup-readtable for (def package ...)
            (eval it))))
      (common-lisp:in-package ,package-name)))
-) ; progn
