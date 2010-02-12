@@ -24,6 +24,7 @@
            #:-environment-
            #:-definer-
            #:-options-
+           #:-name-
            #:-body-
            #:-with-macro/body-
            #:-visitor-
