@@ -22,7 +22,7 @@
 (def (definer e :available-flags "eod") layered-methods ()
   (defmethods-like-definer 'contextl:define-layered-method -whole- -options-))
 
-(def (definer e :available-flags "eas") layer (name supers slots &rest class-options)
+(def (definer e :available-flags "eas") layer (name &optional supers slots &rest class-options)
   (with-class-definer-options name slots
     `(contextl::deflayer ,name ,supers
        ,slots
