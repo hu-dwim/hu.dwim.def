@@ -24,8 +24,8 @@
 
 #|
 usage example in your init.el:
-
-(add-to-list 'load-path (expand-file-name "~/workspace/hu.dwim.def/emacs/"))
+(setq dwim-workspace (getenv "DWIM_WORKSPACE"))
+(add-to-list 'load-path (expand-file-name (concat dwim-workspace "/hu.dwim.def/emacs/")))
 (require 'hu.dwim.def)
 
 You may want to add this to your emacs setup:
