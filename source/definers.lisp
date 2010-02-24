@@ -97,16 +97,20 @@
                           (pop slots)))
          (slot-names (mapcar (lambda (slot)
                                (first (ensure-list slot)))
-                             slots)))
+                             slots))
+         (export? (getf -options- :export)))
     (when (and documentation (getf -options- :documentation))
       (error "Multiple documentations for ~S" -whole-))
     (setf documentation (or documentation (getf -options- :documentation)))
     `(progn
-       ,@(when (getf -options- :export)
+       ,@(when export?
+           `((export '(,name))))
+       ,@(when (and export?
+                    (getf -options- :export-constructor t))
            (bind ((constructor (aif (assoc-value options :constructor)
                                     (first it)
                                     (symbolicate '#:make- name))))
-             `((export '(,name ,constructor)))))
+             `((export '(,constructor)))))
        ,@(when (getf -options- :export-slot-names)
            `((export ',slot-names)))
        ,@(when (getf -options- :export-accessor-names)
