@@ -19,7 +19,7 @@
     (remove-from-plistf -options- :test :weakness :finder-name)
     `(progn
        ,@(when (getf -options- :export)
-           `((export (remove nil '(,finder-name ,collector-name ,iterator-name)))))
+           `((export (remove nil '(,finder-name ,collector-name ,iterator-name ,do-name ,updater-name)))))
        (def global-variable ,hashtable-var (trivial-garbage:make-weak-hash-table :test ,test-function :weakness ,weakness))
        (def global-variable ,lock-var (bordeaux-threads:make-recursive-lock ,(concatenate 'string "lock for " (string hashtable-var))))
        (def function ,finder-name (name &key (otherwise nil otherwise?))
