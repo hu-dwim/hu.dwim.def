@@ -9,8 +9,9 @@
 (def (definer e :available-flags "e") namespace (name &optional definer-args &body definer-forms)
   (bind ((hashtable-var (symbolicate "*" name '#:-namespace*))
          (lock-var (symbolicate "%" name '#:-namespace-lock%))
-         (finder-name    (getf -options- :finder-name (symbolicate '#:find- name)))
-         (collector-name (getf -options- :collector-name (symbolicate '#:collect- name '#:-namespace-values)))
+         (finder-name (getf -options- :finder-name (symbolicate '#:find- name)))
+         (value-collector-name (getf -options- :value-collector-name (symbolicate '#:collect- name '#:-namespace-values)))
+         (name-collector-name (getf -options- :name-collector-name (symbolicate '#:collect- name '#:-namespace-names)))
          (iterator-name  (getf -options- :iterator-name (symbolicate '#:iterate- name '#:-namespace)))
          (do-name        (getf -options- :do-name (symbolicate '#:do- name '#:-namespace)))
          (updater-name   (getf -options- :updater-name (symbolicate '#:update- name '#:-namespace-value)))
@@ -19,7 +20,7 @@
     (remove-from-plistf -options- :test :weakness :finder-name)
     `(progn
        ,@(when (getf -options- :export)
-           `((export (remove nil '(,finder-name ,collector-name ,iterator-name ,do-name ,updater-name)))))
+           `((export (remove nil '(,finder-name ,value-collector-name ,name-collector-name ,iterator-name ,do-name ,updater-name)))))
        (def global-variable ,hashtable-var (trivial-garbage:make-weak-hash-table :test ,test-function :weakness ,weakness))
        (def global-variable ,lock-var (bordeaux-threads:make-recursive-lock ,(concatenate 'string "lock for " (string hashtable-var))))
        (def function ,finder-name (name &key (otherwise nil otherwise?))
@@ -33,10 +34,14 @@
            (if value
                (setf (gethash name ,hashtable-var) value)
                (remhash name ,hashtable-var))))
-       ,@(when collector-name
-          `((def function ,collector-name ()
+       ,@(when value-collector-name
+          `((def function ,value-collector-name ()
               (bordeaux-threads:with-recursive-lock-held (,lock-var)
                 (hash-table-values ,hashtable-var)))))
+       ,@(when name-collector-name
+          `((def function ,name-collector-name ()
+              (bordeaux-threads:with-recursive-lock-held (,lock-var)
+                (hash-table-keys ,hashtable-var)))))
        ,@(when iterator-name
            `((def function ,iterator-name (visitor)
                (bordeaux-threads:with-recursive-lock-held (,lock-var)
