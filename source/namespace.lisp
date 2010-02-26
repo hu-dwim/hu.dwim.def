@@ -65,10 +65,14 @@
                   (bind (((:values ,value-var ,exists?-var) (gethash ,key ,',hashtable-var)))
                     ,@body)))))
        ,@(unless (zerop (length definer-forms))
-          `((def (definer ,@-options-) ,name (-name- ,@definer-args)
+          `((def (definer ,@-options- :available-flags "e") ,name (-name- ,@definer-args)
               ;; locking here _might_ even be useful in some _weird_ situations, but that would prevent having a toplevel (effective) EVAL-ALWAYS inside DEFINER-FORMS
               ;; NOTE: the first argument supposed to be the name in the namespace for the new entry
-              `(setf (,',finder-name ',-name-) ,,@definer-forms))))
+              `(progn
+                 ,@(when (getf -options- :export)
+                    `((eval-when (:compile-toplevel :load-toplevel :execute)
+                        (export ',-name-))))
+                 (setf (,',finder-name ',-name-) ,,@definer-forms)))))
        ',name)))
 
 (def (namespace e) namespace)
