@@ -23,6 +23,8 @@
            `((export (remove nil '(,finder-name ,value-collector-name ,name-collector-name ,iterator-name ,do-name ,updater-name)))))
        (def global-variable ,hashtable-var (trivial-garbage:make-weak-hash-table :test ,test-function :weakness ,weakness))
        (def global-variable ,lock-var (bordeaux-threads:make-recursive-lock ,(concatenate 'string "lock for " (string hashtable-var))))
+       ,@(when (fboundp '(setf find-namespace))
+           `((setf (find-namespace ',name) ,hashtable-var)))
        (def function ,finder-name (name &key (otherwise nil otherwise?))
          (bordeaux-threads:with-recursive-lock-held (,lock-var)
            (or (gethash name ,hashtable-var)
@@ -66,4 +68,7 @@
           `((def (definer ,@-options-) ,name (-name- ,@definer-args)
               ;; locking here _might_ even be useful in some _weird_ situations, but that would prevent having a toplevel (effective) EVAL-ALWAYS inside DEFINER-FORMS
               ;; NOTE: the first argument supposed to be the name in the namespace for the new entry
-              `(setf (,',finder-name ',-name-) ,,@definer-forms)))))))
+              `(setf (,',finder-name ',-name-) ,,@definer-forms))))
+       ',name)))
+
+(def (namespace e) namespace)
