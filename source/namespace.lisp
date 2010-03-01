@@ -24,13 +24,12 @@
        (def global-variable ,hashtable-var (trivial-garbage:make-weak-hash-table :test ,test-function :weakness ,weakness))
        (def global-variable ,lock-var (bordeaux-threads:make-recursive-lock ,(concatenate 'string "lock for " (string hashtable-var))))
        ,@(when (fboundp '(setf find-namespace))
-           `((setf (find-namespace ',name) ,hashtable-var)))
-       (def function ,finder-name (name &key (otherwise nil otherwise?))
+           ;; TODO this metadata is not stored for namespace itself
+           `((setf (find-namespace ',name) (list :name ',name :variable-name ',hashtable-var))))
+       (def function ,finder-name (name &key (hu.dwim.util:otherwise :error hu.dwim.util:otherwise?))
          (bordeaux-threads:with-recursive-lock-held (,lock-var)
            (or (gethash name ,hashtable-var)
-               (if otherwise?
-                   (hu.dwim.util:handle-otherwise otherwise)
-                   (error "Cannot find ~A in namespace ~A" name ',name)))))
+               (hu.dwim.util:handle-otherwise (error "Cannot find ~S in namespace ~S" name ',name)))))
        (def function (setf ,finder-name) (value name)
          (bordeaux-threads:with-recursive-lock-held (,lock-var)
            (if value
