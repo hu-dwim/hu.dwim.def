@@ -116,8 +116,8 @@
       (error "Can not generate a flat with-macro when using &rest, &optional or &key in its lambda list. Use with-macro* for that.")))
   (with-unique-names (fn with-body)
     (with-standard-definer-options name
-      (bind ((define-function? (getf -options- :define-function t))
-             (define-macro? (getf -options- :define-macro t))
+      (bind ((function-definer (getf -options- :function-definer 'function))
+             (macro-definer (getf -options- :macro-definer 'macro))
              (call-with-fn/name (format-symbol *package* "CALL-~A" name))
              (ignorable-variables '())
              ((:values body body-invocation-arguments) (expand-with-macro/process-body body)))
@@ -153,8 +153,8 @@
                                                                         args body-invocation-arguments
                                                                         (ensure-list (getf -options- :quoted-arguments)))))
             `(progn
-               ,(when define-function?
-                  `(defun ,call-with-fn/name (,fn ,@call-with-fn/arguments)
+               ,(when function-definer
+                  `(def ,function-definer ,call-with-fn/name (,fn ,@call-with-fn/arguments)
                      (declare (type function ,fn))
                      ,@(function-like-definer-declarations -options-)
                      (labels ((-with-macro/body- (,@lexically-transferred-arguments)
@@ -164,8 +164,8 @@
                        (declare (dynamic-extent #'-with-macro/body-))
                        (block ,name
                          ,@body))))
-               ,(when define-macro?
-                  `(defmacro ,name (,@(when (or args must-have-args?)
+               ,(when macro-definer
+                  `(def ,macro-definer ,name (,@(when (or args must-have-args?)
                                             (if flat? macro-args (list macro-args)))
                                     &body ,with-body)
                      `(,',call-with-fn/name
