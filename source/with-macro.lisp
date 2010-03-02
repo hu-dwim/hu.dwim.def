@@ -9,7 +9,7 @@
 (def function compute-arguments-for-function-bridge-macro (args &optional body-invocation-arguments quoted-arguments)
   (unless args
     (return-from compute-arguments-for-function-bridge-macro
-      (values nil nil nil)))
+      (values nil nil nil nil)))
   (labels ((maybe-quote (arg)
              (if (member arg quoted-arguments :test #'eq)
                  ``(quote ,,arg)
@@ -24,9 +24,12 @@
     (bind (((:values requireds optionals rest-variable-name keywords allow-other-keys?) (parse-ordinary-lambda-list args))
            ((:values nil raw-optionals nil raw-keywords) (parse-ordinary-lambda-list args :normalize nil))
            (macro-args requireds)
-           (funcall-list (list `(list ,@(remove nil (mapcar #'process-required-argument requireds))))))
+           (processed-required-args (remove nil (mapcar #'process-required-argument requireds)))
+           (funcall-list (list `(list ,@processed-required-args)))
+           (generic-args processed-required-args))
       (when optionals
-        (appendf macro-args '(&optional)))
+        (appendf macro-args '(&optional))
+        (appendf generic-args '(&optional)))
       (loop
         :for entry :in optionals
         :for raw-entry :in raw-optionals
@@ -37,12 +40,14 @@
               (appendf funcall-list `((when ,provided? (list ,(maybe-quote local-var)))))
               (appendf macro-args (list (if (consp raw-entry)
                                             (list (first raw-entry) `(quote ,(second raw-entry)) provided?)
-                                            (list raw-entry nil provided?))))))
+                                            (list raw-entry nil provided?))))
+              (appendf generic-args (list (first (ensure-list raw-entry))))))
       (if rest-variable-name
           (appendf macro-args `(&rest ,rest-variable-name))
           (progn
             (when keywords
               (appendf macro-args '(&key))
+              (appendf generic-args '(&key))
               (loop
                 :for entry :in keywords
                 :for raw-entry :in raw-keywords
@@ -50,16 +55,22 @@
                 :for local-var = (second (first entry))
                 :for provided? = (or (third entry)
                                      (gensym (concatenate 'string (string local-var) (string '#:-provided?))))
-                :do (progn
-                      (appendf funcall-list `((when ,provided? (list ',keyword ,(maybe-quote local-var)))))
-                      (appendf macro-args (list (if (consp raw-entry)
-                                                    (list (first (ensure-list (first raw-entry))) `(quote ,(second raw-entry)) provided?)
-                                                    (list raw-entry nil provided?)))))))
+                :do (bind ((name-part (first (ensure-list raw-entry)))
+                           (name (if (consp name-part)
+                                     (intern (symbol-name (first name-part)))
+                                     name-part)))
+                      (appendf funcall-list `((when ,provided? (list ',keyword ,(maybe-quote name)))))
+                      (appendf macro-args (list (list name (when (consp raw-entry)
+                                                             `(quote ,(second raw-entry)))
+                                                      provided?)))
+                      (appendf generic-args (list name)))))
             (when allow-other-keys?
-              (appendf macro-args '(&allow-other-keys)))))
+              (appendf macro-args '(&allow-other-keys))
+              (appendf generic-args '(&allow-other-keys)))))
       (values macro-args
               funcall-list
-              rest-variable-name))))
+              rest-variable-name
+              generic-args))))
 
 (def function expand-with-macro/process-body (body-form)
   (bind ((body-invocation-arguments 'undefined))
@@ -149,21 +160,28 @@
                   (push `(quote ,el) body-lambda-arguments))))
           (reversef lexically-transferred-arguments)
           (reversef body-lambda-arguments)
-          (bind (((:values macro-args funcall-list rest-variable-name) (compute-arguments-for-function-bridge-macro
-                                                                        args body-invocation-arguments
-                                                                        (ensure-list (getf -options- :quoted-arguments)))))
+          (bind (((:values macro-args funcall-list rest-variable-name generic-args) (compute-arguments-for-function-bridge-macro
+                                                                                     args body-invocation-arguments
+                                                                                     (ensure-list (getf -options- :quoted-arguments)))))
             `(progn
                ,(when function-definer
-                  `(def ,function-definer ,call-with-fn/name (,fn ,@call-with-fn/arguments)
-                     (declare (type function ,fn))
-                     ,@(function-like-definer-declarations -options-)
-                     (labels ((-with-macro/body- (,@lexically-transferred-arguments)
-                                (funcall ,fn ,@lexically-transferred-arguments))
-                              (-body- (&rest args)
-                                (apply #'-with-macro/body- args)))
-                       (declare (dynamic-extent #'-with-macro/body-))
-                       (block ,name
-                         ,@body))))
+                  `(def ,function-definer ,call-with-fn/name ,(if (eq function-definer 'generic)
+                                                                  `(thunk ,@generic-args)
+                                                                  `(,fn ,@call-with-fn/arguments))
+                     ,@(bind ((body `((declare (type function ,fn))
+                                      ,@(function-like-definer-declarations -options-)
+                                      (labels ((-with-macro/body- (,@lexically-transferred-arguments)
+                                                 (funcall ,fn ,@lexically-transferred-arguments))
+                                               (-body- (&rest args)
+                                                 (apply #'-with-macro/body- args)))
+                                        (declare (dynamic-extent #'-with-macro/body-))
+                                        (block ,name
+                                          ,@body)))))
+                         (case function-definer
+                           ((function method) body)
+                           (generic `((:method (,fn ,@call-with-fn/arguments)
+                                        ,@body)))
+                           (t body)))))
                ,(when macro-definer
                   `(def ,macro-definer ,name (,@(when (or args must-have-args?)
                                             (if flat? macro-args (list macro-args)))
