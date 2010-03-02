@@ -197,19 +197,3 @@
    (with-foo (arg1 arg2 :alma alma)
      (...))"
   (expand-with-macro name args body -options- nil t))
-
-(def (definer e :available-flags "e") with/without (name)
-  (bind ((package (symbol-package name))
-         (variable-name (format-symbol package "*~A*" name))
-         (with-macro-name (format-symbol package "WITH-~A" name))
-         (without-macro-name (format-symbol package "WITHOUT-~A" name)))
-    `(progn
-       ,@(when (getf -options- :export)
-               `((export '(,variable-name ,with-macro-name ,without-macro-name))))
-       (defvar ,variable-name)
-       (defmacro ,with-macro-name (&body forms)
-         `(let ((,',variable-name t))
-            ,@forms))
-       (defmacro ,without-macro-name (&body forms)
-         `(let ((,',variable-name nil))
-            ,@forms)))))
