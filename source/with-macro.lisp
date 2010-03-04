@@ -6,29 +6,34 @@
 
 (in-package :hu.dwim.def)
 
-(def function compute-arguments-for-function-bridge-macro (args &optional body-invocation-arguments quoted-arguments)
+(def function compute-arguments-for-function-bridge-macro (args &optional body-invocation-arguments macro-only-arguments)
   (unless args
     (return-from compute-arguments-for-function-bridge-macro
       (values nil nil nil nil)))
-  (labels ((maybe-quote (arg)
-             (if (member arg quoted-arguments :test #'eq)
+  (labels ((macro-only-argument? (name)
+             (member name macro-only-arguments :test #'eq))
+           (maybe-quote (arg)
+             (if (macro-only-argument? arg)
                  ``(quote ,,arg)
                  arg))
            (process-required-argument (arg)
              ;; leave out args that are used to input new lexical names to local vars
              (unless (member arg body-invocation-arguments
                              :key (lambda (el)
-                                    (second (ensure-list el))) 
+                                    (second (ensure-list el)))
                              :test #'eq)
                (maybe-quote arg))))
     (bind (((:values requireds optionals rest-variable-name keywords allow-other-keys?) (parse-ordinary-lambda-list args))
            ((:values nil raw-optionals nil raw-keywords) (parse-ordinary-lambda-list args :normalize nil))
            (macro-args requireds)
+           (function-args (remove-if #'macro-only-argument? requireds))
            (processed-required-args (remove nil (mapcar #'process-required-argument requireds)))
            (funcall-list (list `(list ,@processed-required-args)))
-           (generic-args processed-required-args))
+           (generic-args processed-required-args)
+           (to-be-removed-macro-only-keywords '()))
       (when optionals
         (appendf macro-args '(&optional))
+        (appendf function-args '(&optional))
         (appendf generic-args '(&optional)))
       (loop
         :for entry :in optionals
@@ -37,39 +42,53 @@
         :for provided? = (or (third entry)
                              (gensym (concatenate 'string (string local-var) (string '#:-provided?))))
         :do (progn
-              (appendf funcall-list `((when ,provided? (list ,(maybe-quote local-var)))))
+              (unless (macro-only-argument? local-var)
+                (appendf funcall-list `((when ,provided? (list ,(maybe-quote local-var)))))
+                (appendf function-args (list raw-entry)))
               (appendf macro-args (list (if (consp raw-entry)
                                             (list (first raw-entry) `(quote ,(second raw-entry)) provided?)
                                             (list raw-entry nil provided?))))
               (appendf generic-args (list (first (ensure-list raw-entry))))))
-      (if rest-variable-name
+      (progn
+        (when rest-variable-name
           (appendf macro-args `(&rest ,rest-variable-name))
-          (progn
-            (when keywords
-              (appendf macro-args '(&key))
-              (appendf generic-args '(&key))
-              (loop
-                :for entry :in keywords
-                :for raw-entry :in raw-keywords
-                :for keyword = (first (first entry))
-                :for local-var = (second (first entry))
-                :for provided? = (or (third entry)
-                                     (gensym (concatenate 'string (string local-var) (string '#:-provided?))))
-                :do (bind ((name-part (first (ensure-list raw-entry)))
-                           (name (if (consp name-part)
-                                     (intern (symbol-name (first name-part)))
-                                     name-part)))
-                      (appendf funcall-list `((when ,provided? (list ',keyword ,(maybe-quote name)))))
-                      (appendf macro-args (list (list name (when (consp raw-entry)
-                                                             `(quote ,(second raw-entry)))
-                                                      provided?)))
-                      (appendf generic-args (list name)))))
-            (when allow-other-keys?
-              (appendf macro-args '(&allow-other-keys))
-              (appendf generic-args '(&allow-other-keys)))))
+          (appendf function-args `(&rest ,rest-variable-name)))
+        (when keywords
+          (appendf macro-args '(&key))
+          (appendf function-args '(&key))
+          (appendf generic-args '(&key))
+          (loop
+            :for entry :in keywords
+            :for raw-entry :in raw-keywords
+            :for keyword = (first (first entry))
+            :for local-var = (second (first entry))
+            :for provided? = (or (third entry)
+                                 (gensym (concatenate 'string (string local-var) (string '#:-provided?))))
+            :do (bind ((name-part (first (ensure-list raw-entry)))
+                       (name (if (consp name-part)
+                                 (intern (symbol-name (first name-part)))
+                                 name-part)))
+                  (if (macro-only-argument? name)
+                      (push keyword to-be-removed-macro-only-keywords)
+                      (progn
+                        (unless rest-variable-name
+                          (appendf funcall-list `((when ,provided? (list ',keyword ,(maybe-quote name))))))
+                        (appendf function-args (list raw-entry))))
+                  (appendf macro-args (list (list name (when (consp raw-entry)
+                                                         `(quote ,(second raw-entry)))
+                                                  provided?)))
+                  (appendf generic-args (list name)))))
+        (when allow-other-keys?
+          (appendf macro-args '(&allow-other-keys))
+          (appendf function-args '(&allow-other-keys))
+          (appendf generic-args '(&allow-other-keys)))
+        (when rest-variable-name
+          (appendf funcall-list (if to-be-removed-macro-only-keywords
+                                    `((remove-from-plist ,rest-variable-name ,@to-be-removed-macro-only-keywords))
+                                    `(,rest-variable-name)))))
       (values macro-args
               funcall-list
-              rest-variable-name
+              function-args
               generic-args))))
 
 (def function expand-with-macro/process-body (body-form)
@@ -136,8 +155,7 @@
           (simple-style-warning "You probably want to have at least one (-with-macro/body-) form in the body of a WITH-MACRO to invoke the user provided body...")
           (setf body-invocation-arguments nil))
         (bind ((lexically-transferred-arguments '())
-               (body-lambda-arguments '())
-               (call-with-fn/arguments args))
+               (body-lambda-arguments '()))
           (dolist (el body-invocation-arguments)
             (if (consp el)
                 (bind (((original-name &optional new-name &key ignorable) el))
@@ -152,7 +170,6 @@
                     (error "The arguments used to invoke (-with-macro/body- foo1 foo2) may only contain symbols, or (var-name-inside-macro-body var-name-visible-for-user-forms) pairs denoting variables that are \"transferred\" from the lexical scope of the with-macro into the lexical scope of the user provided body forms (implemented by renaming the fn's argument)."))
                   (when ignorable
                     (push new-name ignorable-variables))
-                  (removef call-with-fn/arguments new-name)
                   (push new-name body-lambda-arguments)
                   (push original-name lexically-transferred-arguments))
                 (progn
@@ -160,14 +177,15 @@
                   (push `(quote ,el) body-lambda-arguments))))
           (reversef lexically-transferred-arguments)
           (reversef body-lambda-arguments)
-          (bind (((:values macro-args funcall-list rest-variable-name generic-args) (compute-arguments-for-function-bridge-macro
-                                                                                     args body-invocation-arguments
-                                                                                     (ensure-list (getf -options- :quoted-arguments)))))
+          (bind (((:values macro-args funcall-list function-args generic-args)
+                  (compute-arguments-for-function-bridge-macro
+                   args body-invocation-arguments
+                   (ensure-list (getf -options- :macro-only-arguments)))))
             `(progn
                ,(when function-definer
                   `(def ,function-definer ,call-with-fn/name ,(if (eq function-definer 'generic)
                                                                   `(thunk ,@generic-args)
-                                                                  `(,fn ,@call-with-fn/arguments))
+                                                                  `(,fn ,@function-args))
                      ,@(bind ((body `((declare (type function ,fn))
                                       ,@(function-like-definer-declarations -options-)
                                       (labels ((-with-macro/body- (,@lexically-transferred-arguments)
@@ -179,7 +197,7 @@
                                           ,@body)))))
                          (case function-definer
                            ((function method) body)
-                           (generic `((:method (,fn ,@call-with-fn/arguments)
+                           (generic `((:method (,fn ,@function-args)
                                         ,@body)))
                            (t body)))))
                ,(when macro-definer
@@ -191,8 +209,7 @@
                          ,@,(when ignorable-variables
                              ``((declare (ignorable ,,@ignorable-variables))))
                          ,@,with-body)
-                       ,@,@funcall-list
-                       ,@,rest-variable-name))))))))))
+                       ,@,@funcall-list))))))))))
 
 (def (definer e :available-flags "eod") with-macro (name args &body body)
   "(def with-macro with-foo (arg1 arg2)
