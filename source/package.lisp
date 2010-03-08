@@ -13,13 +13,12 @@
         :hu.dwim.asdf
         :iterate
         :metabang-bind)
-
   (:export #:def
            #:definer
            #:find-definer
            #:with-standard-definer-options
            #:function-like-definer-declarations
-
+           ;; lexically visible non-hygienic names
            #:-whole-
            #:-environment-
            #:-definer-
