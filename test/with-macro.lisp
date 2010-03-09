@@ -6,6 +6,8 @@
 
 (in-package :hu.dwim.def.test)
 
+;; many of these are broken on ccl due to http://trac.clozure.com/ccl/ticket/6
+
 (defsuite* (test/with-macro :in test) ()
   (with-fixture test/with-macro/fixture
     (run-child-tests)))

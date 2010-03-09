@@ -213,6 +213,7 @@
                          ,@,(when ignorable-variables
                              ``((declare (ignorable ,,@ignorable-variables))))
                          ,@,with-body)
+                       ;; this ,@,@ is broken on ccl due to http://trac.clozure.com/ccl/ticket/6
                        ,@,@funcall-list))))))))))
 
 (def (definer e :available-flags "eod") with-macro (name args &body body)
