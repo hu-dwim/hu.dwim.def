@@ -46,7 +46,9 @@
               (unless (macro-only-argument? local-var)
                 (appendf funcall-list `((when ,provided? (list ,(maybe-quote local-var)))))
                 (appendf function-args (list raw-entry)))
-              (appendf macro-args `((,local-var '#:ignore-me ,provided?)))
+              (appendf macro-args (if rest-variable-name
+                                      (list local-var)
+                                      `((,local-var '#:ignore-me ,provided?))))
               (appendf generic-args (list (first (ensure-list raw-entry))))))
       (progn
         (when rest-variable-name
@@ -74,7 +76,9 @@
                             (push name macro-ignored-args)
                             (appendf funcall-list `((when ,provided? (list ',keyword ,(maybe-quote name))))))
                         (appendf function-args (list raw-entry))))
-                  (appendf macro-args `((,name '#:ignore-me ,provided?)))
+                  (appendf macro-args (if rest-variable-name
+                                          (list local-var)
+                                          `((,name '#:ignore-me ,provided?))))
                   (appendf generic-args (list name)))))
         (when allow-other-keys?
           (appendf macro-args '(&allow-other-keys))
