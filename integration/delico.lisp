@@ -7,6 +7,6 @@
 (in-package :hu.dwim.def)
 
 (def (definer :available-flags "e") function/cc ()
-  (function-like-definer -definer- 'hu.dwim.delico:defun/cc -whole- -environment- -options-))
+  (function-like-definer hu.dwim.delico:defun/cc))
 
 (integrated-export '(hu.dwim.delico:defun/cc function/cc) :hu.dwim.def)

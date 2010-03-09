@@ -7,7 +7,7 @@
 (in-package :hu.dwim.def)
 
 (def (definer :available-flags "eod") contextl:layered-method ()
-  (function-like-definer -definer- 'contextl:define-layered-method -whole- -environment- -options-))
+  (function-like-definer contextl:define-layered-method))
 
 (def (definer :available-flags "eod") contextl:layered-function ()
   (bind ((body (nthcdr 2 -whole-))
@@ -20,7 +20,7 @@
        (contextl:define-layered-function ,name ,@body))))
 
 (def (definer e :available-flags "eod") layered-methods ()
-  (defmethods-like-definer 'contextl:define-layered-method -whole- -options-))
+  (defmethods-like-definer contextl:define-layered-method))
 
 (def (definer e :available-flags "eas") layer (name &optional supers slots &rest class-options)
   (with-class-definer-options name slots

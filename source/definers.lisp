@@ -7,19 +7,19 @@
 (in-package :hu.dwim.def)
 
 (def (definer e :available-flags "ioed") function ()
-  (function-like-definer -definer- 'defun -whole- -environment- -options-))
+  (function-like-definer defun))
 
 (def (definer e :available-flags "eod") method ()
-  (function-like-definer -definer- 'defmethod -whole- -environment- -options-))
+  (function-like-definer defmethod))
 
 (def (definer e :available-flags "eod") methods ()
-  (defmethods-like-definer 'defmethod -whole- -options-))
+  (defmethods-like-definer defmethod))
 
 (def (definer e :available-flags "eod") macro ()
-  (function-like-definer -definer- 'defmacro -whole- -environment- -options-))
+  (function-like-definer defmacro))
 
 (def (definer e :available-flags "eod") compiler-macro ()
-  (function-like-definer -definer- 'define-compiler-macro -whole- -environment- -options-))
+  (function-like-definer define-compiler-macro))
 
 (def (definer e :available-flags "e") symbol-macro (name expansion &optional documentation)
   (check-type name symbol)
