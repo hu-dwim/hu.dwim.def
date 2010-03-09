@@ -26,6 +26,7 @@
     (bind (((:values requireds optionals rest-variable-name keywords allow-other-keys?) (parse-ordinary-lambda-list args))
            ((:values nil raw-optionals nil raw-keywords) (parse-ordinary-lambda-list args :normalize nil))
            (macro-args requireds)
+           (macro-ignored-args '())
            (function-args (remove-if #'macro-only-argument? requireds))
            (processed-required-args (remove nil (mapcar #'process-required-argument requireds)))
            (funcall-list (list `(list ,@processed-required-args)))
@@ -45,9 +46,7 @@
               (unless (macro-only-argument? local-var)
                 (appendf funcall-list `((when ,provided? (list ,(maybe-quote local-var)))))
                 (appendf function-args (list raw-entry)))
-              (appendf macro-args (list (if (consp raw-entry)
-                                            (list (first raw-entry) `(quote ,(second raw-entry)) provided?)
-                                            (list raw-entry nil provided?))))
+              (appendf macro-args `((,local-var '#:ignore-me ,provided?)))
               (appendf generic-args (list (first (ensure-list raw-entry))))))
       (progn
         (when rest-variable-name
@@ -71,12 +70,11 @@
                   (if (macro-only-argument? name)
                       (push keyword to-be-removed-macro-only-keywords)
                       (progn
-                        (unless rest-variable-name
-                          (appendf funcall-list `((when ,provided? (list ',keyword ,(maybe-quote name))))))
+                        (if rest-variable-name
+                            (push name macro-ignored-args)
+                            (appendf funcall-list `((when ,provided? (list ',keyword ,(maybe-quote name))))))
                         (appendf function-args (list raw-entry))))
-                  (appendf macro-args (list (list name (when (consp raw-entry)
-                                                         `(quote ,(second raw-entry)))
-                                                  provided?)))
+                  (appendf macro-args `((,name '#:ignore-me ,provided?)))
                   (appendf generic-args (list name)))))
         (when allow-other-keys?
           (appendf macro-args '(&allow-other-keys))
@@ -87,6 +85,7 @@
                                     `((remove-from-plist ,rest-variable-name ,@to-be-removed-macro-only-keywords))
                                     `(,rest-variable-name)))))
       (values macro-args
+              (reverse macro-ignored-args)
               funcall-list
               function-args
               generic-args))))
@@ -177,7 +176,7 @@
                   (push `(quote ,el) body-lambda-arguments))))
           (reversef lexically-transferred-arguments)
           (reversef body-lambda-arguments)
-          (bind (((:values macro-args funcall-list function-args generic-args)
+          (bind (((:values macro-args macro-ignored-args funcall-list function-args generic-args)
                   (compute-arguments-for-function-bridge-macro
                    args body-invocation-arguments
                    (ensure-list (getf -options- :macro-only-arguments)))))
@@ -204,6 +203,7 @@
                   `(def ,macro-definer ,name (,@(when (or args must-have-args?)
                                             (if flat? macro-args (list macro-args)))
                                     &body ,with-body)
+                     (declare (ignore ,@macro-ignored-args))
                      `(,',call-with-fn/name
                        (named-lambda ,',(symbolicate name '#:-body) ,(list ,@body-lambda-arguments)
                          ,@,(when ignorable-variables

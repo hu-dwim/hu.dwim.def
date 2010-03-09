@@ -11,7 +11,7 @@
          (do-name (symbolicate '#:do- name))
          (do/body-name (symbolicate '#:do- name '#:/body))
          ((:values body declarations documentation) (parse-body body :documentation t :whole whole))
-         ((:values macro-args funcall-list rest-variable-name) (compute-arguments-for-function-bridge-macro args)))
+         ((:values macro-args macro-ignored-args funcall-list) (compute-arguments-for-function-bridge-macro args)))
     (with-unique-names (element-var)
       `(progn
          ,@(when (getf -options- :export)
@@ -21,13 +21,10 @@
                    (list documentation))
            ,@declarations
            ,@body)
-         (def macro ,do-name ((,element-var ,@(if rest-variable-name
-                                              `(&rest ,rest-variable-name)
-                                              macro-args))
+         (def macro ,do-name ((,element-var ,@macro-args)
                                &body body)
+           (declare (ignore ,@macro-ignored-args))
            `(block nil
               (flet ((,',do/body-name (,,element-var)
                        ,@body))
-                ,,(if rest-variable-name
-                      ``(apply ',',iterator-name #',',do/body-name ,rest-variable-name)
-                      ``(,',iterator-name #',',do/body-name ,@,@funcall-list)))))))))
+                (,',iterator-name #',',do/body-name ,@,@funcall-list))))))))
