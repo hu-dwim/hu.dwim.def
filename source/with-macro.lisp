@@ -73,7 +73,7 @@
                       (push keyword to-be-removed-macro-only-keywords)
                       (progn
                         (if rest-variable-name
-                            (push name macro-ignored-args)
+                            (push local-var macro-ignored-args)
                             (appendf funcall-list `((when ,provided? (list ',keyword ,(maybe-quote name))))))
                         (appendf function-args (list raw-entry))))
                   (appendf macro-args (if rest-variable-name
