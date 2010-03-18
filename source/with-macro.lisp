@@ -205,8 +205,8 @@
                            (t body)))))
                ,(when macro-definer
                   `(def ,macro-definer ,name (,@(when (or args must-have-args?)
-                                            (if flat? macro-args (list macro-args)))
-                                    &body ,with-body)
+                                                  (if flat? macro-args (list macro-args)))
+                                        &body ,with-body)
                      (declare (ignore ,@macro-ignored-args))
                      `(,',call-with-fn/name
                        (named-lambda ,',(symbolicate name '#:-body) ,(list ,@body-lambda-arguments)

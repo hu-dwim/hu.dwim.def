@@ -10,11 +10,8 @@
   (check-type readtable readtable)
   (dolist (package-name (ensure-list package-names))
     (setf package-name (string package-name))
-    (let ((entry (find package-name swank:*readtable-alist* :test #'string= :key #'car)))
-      (unless entry
-        (setf entry (cons package-name nil))
-        (push entry swank:*readtable-alist*))
-      (setf (cdr entry) readtable))))
+    (setf (assoc-value swank:*readtable-alist* package-name :test #'string=)
+          readtable)))
 
 (def function definer-lookup-hook (form)
   (when (typep form 'definer-name)
