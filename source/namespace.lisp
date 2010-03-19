@@ -24,8 +24,8 @@
        (def global-variable ,hashtable-var (trivial-garbage:make-weak-hash-table :test ,test-function :weakness ,weakness))
        (def global-variable ,lock-var (bordeaux-threads:make-recursive-lock ,(concatenate 'string "lock for " (string hashtable-var))))
        ,@(when (fboundp '(setf find-namespace))
-           ;; TODO this metadata is not stored for namespace itself
-           `((setf (find-namespace ',name) (list :name ',name :variable-name ',hashtable-var))))
+           ;; TODO this metadata is not stored for namespace itself, use this instance instead of the hashtable
+           `((setf (find-namespace ',name) (make-instance 'namespace :name ',name :variable-name ',hashtable-var))))
        (def function ,finder-name (name &key (hu.dwim.util:otherwise :error hu.dwim.util:otherwise?))
          (bordeaux-threads:with-recursive-lock-held (,lock-var)
            (or (gethash name ,hashtable-var)
@@ -73,5 +73,9 @@
                         (export ',-name-))))
                  (setf (,',finder-name ',-name-) ,,@definer-forms)))))
        ',name)))
+
+(def (class* e) namespace ()
+  ((name :type symbol)
+   (variable :type symbol)))
 
 (def (namespace e) namespace)
