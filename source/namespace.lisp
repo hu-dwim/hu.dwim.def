@@ -25,7 +25,7 @@
        (def global-variable ,lock-var (bordeaux-threads:make-recursive-lock ,(concatenate 'string "lock for " (string hashtable-var))))
        ,@(when (fboundp '(setf find-namespace))
            ;; TODO this metadata is not stored for namespace itself, use this instance instead of the hashtable
-           `((setf (find-namespace ',name) (make-instance 'namespace :name ',name :variable-name ',hashtable-var))))
+           `((setf (find-namespace ',name) (make-instance 'namespace :name ',name :variable ',hashtable-var))))
        (def function ,finder-name (name &key (hu.dwim.util:otherwise :error hu.dwim.util:otherwise?))
          (bordeaux-threads:with-recursive-lock-held (,lock-var)
            (or (gethash name ,hashtable-var)
