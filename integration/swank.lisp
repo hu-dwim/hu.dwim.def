@@ -35,7 +35,5 @@
 (pushnew 'notify-swank-about-package-readtable *extended-package-definition-hooks*)
 
 ;; notify swank about the readtable of the already defined extended-packages
-(iterate-extended-package-namespace
- (lambda (name extended-package)
-   (declare (ignore name))
-   (notify-swank-about-package-readtable extended-package)))
+(do-namespace (extended-package _ extended-package)
+  (notify-swank-about-package-readtable extended-package))

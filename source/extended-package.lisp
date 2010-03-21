@@ -9,7 +9,7 @@
 ;;;;;;
 ;;; define a (def package ...) that can store custom package options into the namespace called extended-package
 
-(def (dumb-namespace e :test 'equal) extended-package)
+(def (namespace e :test 'equal) extended-package)
 
 (def special-variable *extended-package-definition-hooks* nil)
 
@@ -24,9 +24,8 @@
 
 (def function %define-extended-package (name readtable-setup-form standard-options extended-options)
   (check-type name string)
-  (when (find-extended-package name :otherwise nil)
-    ;; TODO this is broken because of the usual compile-time/run-time redefinition...
-    #+nil
+  #+nil ; TODO this is broken because of the usual compile-time/run-time redefinition...
+  (when (find-extended-package name :otherwise #f)
     (simple-style-warning "Redefining extended package ~S" name))
   (bind ((extended-package (make-instance 'extended-package
                                           :name name

@@ -16,4 +16,4 @@
                :hu.dwim.util
                :trivial-garbage)
   :components ((:module "source"
-                :components ((:file "namespace")))))
+                :components ((:file "namespace-late")))))
