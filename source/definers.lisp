@@ -221,44 +221,6 @@
          ;; primary PRINT-OBJECT methods are supposed to return the object
          -self-))))
 
-;; TODO this is very much a duplicate, but it's used by (def extended-package ...) and :hu.dwim.def.namespace brings in too many (circular) dependencies at too many places...
-(def (definer :available-flags "e") dumb-namespace (name &optional definer-args &body definer-forms)
-  (bind ((hashtable-var (symbolicate "*" name '#:-namespace*))
-         (lock-var (symbolicate "%" name '#:-namespace-lock%))
-         (finder-name (or (getf -options- :finder-name) (symbolicate '#:find- name)))
-         (collector-name (symbolicate '#:collect- name '#:-namespace-values))
-         (iterator-name (symbolicate '#:iterate- name '#:-namespace))
-         (global-var-definer #+sbcl 'sb-ext:defglobal
-                             #-sbcl 'defvar)
-         (test-function (or (getf -options- :test) '#'eq)))
-    (remove-from-plistf -options- :test :finder-name)
-    `(progn
-       ,@(when (getf -options- :export)
-           `((export '(,finder-name ,collector-name ,iterator-name))))
-       (,global-var-definer ,hashtable-var (make-hash-table :test ,test-function))
-       (,global-var-definer ,lock-var (make-lock :name ,(concatenate 'string "lock for " (string hashtable-var))))
-       (def function ,finder-name (name &key (otherwise nil otherwise?))
-         (or (with-lock ,lock-var
-               (gethash name ,hashtable-var))
-             (if otherwise?
-                 otherwise
-                 (error "Cannot find ~A in namespace ~A" name ',name))))
-       (def function (setf ,finder-name) (value name)
-         (with-lock ,lock-var
-           (if value
-               (setf (gethash name ,hashtable-var) value)
-               (remhash name ,hashtable-var))))
-       (def function ,collector-name ()
-         (with-lock ,lock-var
-           (hash-table-values ,hashtable-var)))
-       (def function ,iterator-name (visitor)
-         (with-lock ,lock-var
-           (maphash visitor ,hashtable-var)))
-       ,@(unless (and (zerop (length definer-args))
-                      (zerop (length definer-forms)))
-          `((def (definer ,@-options-) ,name (name ,@definer-args)
-              `(setf (,',finder-name ',name) ,,@definer-forms)))))))
-
 (def (definer e :available-flags "e") global-variable (name value &optional documentation)
   (assert (not (and documentation (getf -options- :documentation))) () "Multiple documentations for ~S" -whole-)
   (setf documentation (or documentation (getf -options- :documentation)))
