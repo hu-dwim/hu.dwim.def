@@ -153,7 +153,8 @@
              (macro-definer (getf -options- :macro-definer 'macro))
              (call-with-fn/name (format-symbol *package* "CALL-~A" name))
              (ignorable-variables '())
-             ((:values body body-invocation-arguments) (expand-with-macro/process-body body)))
+             ((:values parsed-body declarations doc-string) (parse-body body :documentation t))
+             ((:values final-body-forms body-invocation-arguments) (expand-with-macro/process-body parsed-body)))
         (when (eq body-invocation-arguments 'undefined)
           (simple-style-warning "You probably want to have at least one (-with-macro/body-) form in the body of a WITH-MACRO to invoke the user provided body...")
           (setf body-invocation-arguments nil))
@@ -190,6 +191,7 @@
                                                                   `(thunk ,@generic-args)
                                                                   `(,fn ,@function-args))
                      ,@(bind ((body `((declare (type function ,fn))
+                                      ,@declarations
                                       ,@(function-like-definer-declarations -options-)
                                       (labels ((-with-macro/body- (,@lexically-transferred-arguments)
                                                  (funcall ,fn ,@lexically-transferred-arguments))
@@ -197,7 +199,7 @@
                                                  (apply #'-with-macro/body- args)))
                                         (declare (dynamic-extent #'-with-macro/body-))
                                         (block ,name
-                                          ,@body)))))
+                                          ,@final-body-forms)))))
                          (case function-definer
                            ((function method) body)
                            (generic `((:method (,fn ,@function-args)
@@ -207,6 +209,7 @@
                   `(def ,macro-definer ,name (,@(when (or args must-have-args?)
                                                   (if flat? macro-args (list macro-args)))
                                         &body ,with-body)
+                     ,@(when doc-string (list doc-string))
                      (declare (ignore ,@macro-ignored-args))
                      `(,',call-with-fn/name
                        (named-lambda ,',(symbolicate name '#:-body) ,(list ,@body-lambda-arguments)
