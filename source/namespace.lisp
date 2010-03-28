@@ -152,7 +152,7 @@
   `(do-namespace (namespace _ ,value-var ,return-value)
      ,@body))
 
-#+nil ; TODO it's crap as it is...
+#| ; TODO it's crap as it is...
 (def (macro e) update-namespace-value ((namespace key value-var &optional exists?-var) &body body)
   (bind ((namespace-designator namespace))
     (with-unique-names (namespace)
@@ -160,3 +160,4 @@
          (with-lock-held-on-namespace ,namespace
            (bind (((:values ,value-var ,exists?-var) (gethash ,key ,',hashtable-var)))
              ,@body))))))
+|#

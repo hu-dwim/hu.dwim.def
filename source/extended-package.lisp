@@ -25,7 +25,7 @@
 (def function %define-extended-package (name readtable-setup-form standard-options extended-options)
   (check-type name string)
   #+nil ; TODO this is broken because of the usual compile-time/run-time redefinition...
-  (when (find-extended-package name :otherwise #f)
+  (when (find-extended-package name :otherwise nil)
     (simple-style-warning "Redefining extended package ~S" name))
   (bind ((extended-package (make-instance 'extended-package
                                           :name name
