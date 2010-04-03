@@ -28,7 +28,8 @@
     (setf extended-package (find-extended-package (string extended-package))))
   (awhen (readtable-setup-form-of extended-package)
     (register-readtable-for-swank (name-of extended-package)
-                                  (bind ((*readtable* (copy-readtable *readtable*)))
+                                  (bind ((*readtable* (copy-readtable (with-standard-io-syntax
+                                                                        *readtable*))))
                                     (eval it)
                                     *readtable*))))
 
