@@ -37,11 +37,15 @@
     (awhen (find-function-definer-option-transformer name)
       (setf options (funcall it options)))
     (bind (((:values body declarations documentation) (parse-body body :documentation t :whole whole))
-           (outer-declarations (function-like-definer-declarations options)))
+           (outer-declarations (function-like-definer-declarations options))
+           ;; KLUDGE https://bugs.launchpad.net/sbcl/+bug/562911
+           (process-inline? (not (eq definer-macro-name 'defmacro))))
       `(progn
-         ,@(when (getf options :inline)
+         ,@(when (and process-inline?
+                      (getf options :inline))
                  `((declaim (inline ,name))))
-         ,@(when (getf options :debug)
+         ,@(when (and process-inline?
+                      (getf options :debug))
                  `((declaim (notinline ,name))))
          (locally
              ,@outer-declarations
