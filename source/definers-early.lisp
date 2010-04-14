@@ -19,16 +19,22 @@
 (defun transform-function-definer-options (options)
   (if *load-as-production?*
       options
-      (remove-from-plist options :inline :optimize)))
+      (bind ((debug-level (getf options :debug (max #+sbcl (sb-c::policy-quality sb-c::*policy* 'debug)
+                                                    1))))
+        (list* :debug debug-level
+               (remove-from-plist options :inline :optimize :debug)))))
 
 (defun function-like-definer-declarations (-options-)
-  (if (getf -options- :debug)
-      (progn
-        (when (getf -options- #\o)
-          (warn "Ignoring 'O'ptimize flag because 'D'ebug was also specified"))
-        '((declare (optimize (speed 0) (debug 3)))))
-      (when (getf -options- :optimize)
-        '((declare (optimize (speed 3) (debug 0) (safety 2)))))))
+  (bind ((debug-level (getf -options- :debug)))
+    (when (eq debug-level t)
+      (setf debug-level 3))
+    (if debug-level
+        (progn
+          (when (getf -options- :optimize)
+            (warn "Ignoring 'O'ptimize flag because 'D'ebug was also specified"))
+          `((declare (optimize (speed 0) (debug ,debug-level)))))
+        (when (getf -options- :optimize)
+          '((declare (optimize (speed 3) (debug 0) (safety 2))))))))
 
 (defun %function-like-definer (definer-macro-name &key whole options)
   (bind ((body (nthcdr 2 whole))
