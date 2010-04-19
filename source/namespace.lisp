@@ -24,6 +24,9 @@
   (EVAL-WHEN (:COMPILE-TOPLEVEL :LOAD-TOPLEVEL :EXECUTE)
     (EXPORT '(NAMESPACE) "HU.DWIM.DEF")))
 
+(def print-object namespace
+  (write (name-of -self-)))
+
 ;;;;;;
 ;;; some indirections to be redefined later to lower dependencies
 
