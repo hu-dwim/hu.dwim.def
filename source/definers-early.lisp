@@ -36,10 +36,13 @@
         (when (getf -options- :optimize)
           '((declare (optimize (speed 3) (debug 0) (safety 2))))))))
 
-(defun %function-like-definer (definer-macro-name &key whole options)
+(defun %function-like-definer (definer-macro-name &key whole options allow-compound-name)
   (bind ((body (nthcdr 2 whole))
          (name (pop body))
          (args (pop body)))
+    (when (and allow-compound-name
+               (consp name))
+      (setf name (first name)))
     (awhen (find-function-definer-option-transformer name)
       (setf options (funcall it options)))
     (bind (((:values body declarations documentation) (parse-body body :documentation t :whole whole))
@@ -64,8 +67,9 @@
              ,@declarations
              ,@body))))))
 
-(defmacro function-like-definer (definer-macro-name)
-  `(%function-like-definer ',definer-macro-name :whole -whole- :options -options-))
+(defmacro function-like-definer (definer-macro-name &key allow-compound-name)
+  `(%function-like-definer ',definer-macro-name :whole -whole- :options -options-
+                           :allow-compound-name ,allow-compound-name))
 
 (defun %defmethods-like-definer (definer-macro-name -whole- -options-)
   (bind ((body (nthcdr 2 -whole-))
