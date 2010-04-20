@@ -46,12 +46,18 @@
 (defun %function-like-definer (definer-macro-name &key whole options allow-compound-name)
   (bind ((body (nthcdr 2 whole))
          (name (pop body))
-         (name-symbol (if (and allow-compound-name
-                               (consp name))
-                          (first name)
-                          (progn
-                            (assert (symbolp name))
-                            name)))
+         (name-symbol (if allow-compound-name
+                          (cond
+                            ((and (consp name)
+                                  (length= 2 name)
+                                  (eq (first name) 'setf))
+                             name)
+                            ((consp name)
+                             (first name))
+                            ((symbolp name)
+                             name)
+                            (t (error "Don't know how to deal with definition name ~S" name)))
+                          name))
          (args (pop body)))
     (awhen (find-function-definer-option-transformer name-symbol)
       (setf options (funcall it options)))
