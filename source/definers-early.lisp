@@ -16,25 +16,32 @@
         (fdefinition name)
         #'transform-function-definer-options)))
 
+(defun normalize-debug-level (level)
+  (ecase level
+    ((nil) 0)
+    ((t) 3)
+    ((0 1 2 3) level)))
+
 (defun transform-function-definer-options (options)
   (if *load-as-production?*
       options
-      (bind ((debug-level (getf options :debug (max #+sbcl (sb-c::policy-quality sb-c::*policy* 'debug)
-                                                    1))))
+      (bind ((debug-level (normalize-debug-level
+                           (getf options :debug (max #+sbcl (sb-c::policy-quality sb-c::*policy* 'debug)
+                                                     1)))))
+        (when (> debug-level 0)
+          (remove-from-plistf options :inline :optimize))
         (list* :debug debug-level
-               (remove-from-plist options :inline :optimize :debug)))))
+               (remove-from-plist options :debug)))))
 
 (defun function-like-definer-declarations (-options-)
-  (bind ((debug-level (getf -options- :debug)))
-    (when (eq debug-level t)
-      (setf debug-level 3))
-    (if debug-level
+  (bind ((debug-level (normalize-debug-level (getf -options- :debug))))
+    (if (zerop debug-level)
+        (when (getf -options- :optimize)
+          '((declare (optimize (speed 3) (debug 0) (safety 2)))))
         (progn
           (when (getf -options- :optimize)
             (warn "Ignoring 'O'ptimize flag because 'D'ebug was also specified"))
-          `((declare (optimize (speed 0) (debug ,debug-level)))))
-        (when (getf -options- :optimize)
-          '((declare (optimize (speed 3) (debug 0) (safety 2))))))))
+          `((declare (optimize (speed 0) (debug ,debug-level))))))))
 
 (defun %function-like-definer (definer-macro-name &key whole options allow-compound-name)
   (bind ((body (nthcdr 2 whole))
