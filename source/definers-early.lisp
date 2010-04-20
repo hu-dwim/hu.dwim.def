@@ -46,11 +46,14 @@
 (defun %function-like-definer (definer-macro-name &key whole options allow-compound-name)
   (bind ((body (nthcdr 2 whole))
          (name (pop body))
+         (name-symbol (if (and allow-compound-name
+                               (consp name))
+                          (first name)
+                          (progn
+                            (assert (symbolp name))
+                            name)))
          (args (pop body)))
-    (when (and allow-compound-name
-               (consp name))
-      (setf name (first name)))
-    (awhen (find-function-definer-option-transformer name)
+    (awhen (find-function-definer-option-transformer name-symbol)
       (setf options (funcall it options)))
     (bind (((:values body declarations documentation) (parse-body body :documentation t :whole whole))
            (outer-declarations (function-like-definer-declarations options))
@@ -59,15 +62,15 @@
       `(progn
          ,@(when (and process-inline?
                       (getf options :inline))
-                 `((declaim (inline ,name))))
+                 `((declaim (inline ,name-symbol))))
          ,@(when (and process-inline?
                       (getf options :debug))
-                 `((declaim (notinline ,name))))
+                 `((declaim (notinline ,name-symbol))))
          (locally
              ,@outer-declarations
            ,@(when (getf options :export)
                    `((eval-when (:compile-toplevel :load-toplevel :execute)
-                       (export ',name))))
+                       (export ',name-symbol))))
            (,definer-macro-name ,name ,args
              ,@(when documentation
                      (list documentation))
