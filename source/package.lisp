@@ -19,6 +19,10 @@
            #:with-standard-definer-options
            #:function-like-definer-declarations
            ;; lexically visible non-hygienic names
+           #:-child-
+           #:-children-
+           #:-content-
+           #:-recurse-
            #:-whole-
            #:-environment-
            #:-definer-
