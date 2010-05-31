@@ -7,30 +7,26 @@
 (in-package :hu.dwim.def)
 
 ;;; KLUDGE redefine a few things to make namespaces thread-safe now that we loaded a few more dependencies...
-(locally
-    (declare #+sbcl(sb-ext:muffle-conditions sb-kernel:redefinition-warning))
+(hu.dwim.util:with-muffled-redefinition-warnings
 
-  (handler-bind
-      (#+sbcl(sb-kernel:redefinition-warning #'muffle-warning))
+  (def function make-namespace-lock (namespace-name)
+    (bordeaux-threads:make-recursive-lock
+     (bind ((*package* (find-package :keyword)))
+       (format nil "lock for namespace ~S" namespace-name))))
 
-    (def function make-namespace-lock (namespace-name)
-      (bordeaux-threads:make-recursive-lock
-       (bind ((*package* (find-package :keyword)))
-         (format nil "lock for namespace ~S" namespace-name))))
+  ;; ensure the lock of all the currently defined namespaces before we redefine WITH-LOCK-HELD-ON-NAMESPACE
+  (do-all-namespaces (namespace)
+    (unless (lock-of namespace)
+      (setf (lock-of namespace) (make-namespace-lock (name-of namespace)))))
 
-    ;; ensure the lock of all the currently defined namespaces before we redefine WITH-LOCK-HELD-ON-NAMESPACE
-    (do-all-namespaces (namespace)
-      (unless (lock-of namespace)
-        (setf (lock-of namespace) (make-namespace-lock (name-of namespace)))))
+  (def with-macro with-lock-held-on-namespace (namespace)
+    (bordeaux-threads:with-recursive-lock-held ((lock-of namespace))
+      (-with-macro/body-)))
 
-    (def with-macro with-lock-held-on-namespace (namespace)
-      (bordeaux-threads:with-recursive-lock-held ((lock-of namespace))
-        (-with-macro/body-)))
+  (def function make-namespace-hash-table (test-function weakness)
+    (trivial-garbage:make-weak-hash-table :test test-function :weakness weakness))
 
-    (def function make-namespace-hash-table (test-function weakness)
-      (trivial-garbage:make-weak-hash-table :test test-function :weakness weakness))
+  (def function handle-otherwise/value (otherwise &key default-message)
+    (hu.dwim.util:handle-otherwise/value otherwise :default-message default-message))
 
-    (def function handle-otherwise/value (otherwise &key default-message)
-      (hu.dwim.util:handle-otherwise/value otherwise :default-message default-message))
-
-    (export 'namespace :hu.dwim.def)))
+  (export 'namespace :hu.dwim.def))
