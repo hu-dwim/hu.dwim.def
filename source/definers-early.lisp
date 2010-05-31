@@ -23,15 +23,15 @@
     ((0 1 2 3) level)))
 
 (defun transform-function-definer-options (options)
-  (if *load-as-production?*
-      options
-      (bind ((debug-level (normalize-debug-level
-                           (getf options :debug (max #+sbcl (sb-c::policy-quality sb-c::*policy* 'debug)
-                                                     1)))))
-        (when (> debug-level 0)
-          (remove-from-plistf options :inline :optimize))
-        (list* :debug debug-level
-               (remove-from-plist options :debug)))))
+  (bind ((debug-level (normalize-debug-level
+                       (getf options :debug (if *load-as-production?*
+                                                0
+                                                (max #+sbcl (sb-c::policy-quality sb-c::*policy* 'debug)
+                                                     1))))))
+    (when (> debug-level 0)
+      (remove-from-plistf options :inline :optimize))
+    (list* :debug debug-level
+           (remove-from-plist options :debug))))
 
 (defun function-like-definer-declarations (-options-)
   (bind ((debug-level (normalize-debug-level (getf -options- :debug))))
