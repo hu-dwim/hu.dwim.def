@@ -81,7 +81,9 @@
              ,@(when documentation
                      (list documentation))
              ,@declarations
-             ,@body))))))
+             ,@body))
+         ,@(when (eq (getf options :inline) :possible)
+             `((declaim (notinline ,name-symbol))))))))
 
 (defmacro function-like-definer (definer-macro-name &key allow-compound-name)
   `(%function-like-definer ',definer-macro-name :whole -whole- :options -options-
