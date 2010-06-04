@@ -40,7 +40,7 @@
          (name (pop body))
          (outer-declarations (function-like-definer-declarations -options-)))
     `(locally
-         ,@outer-declarations
+         (declare ,@outer-declarations)
        ,@(when (getf -options- :export)
                `((export ',name)))
        (defgeneric ,name ,@body))))
@@ -192,7 +192,7 @@
                         class-name*)))
     (bind ((declarations (function-like-definer-declarations -options-)))
       `(locally
-           ,@declarations
+           (declare ,@declarations)
          ;; TODO this is a bad idea: a headache for macro writing macros...
          ;; use -self- instead. same for print-object and friends...
          (defmethod initialize-instance :after ((-self- ,class-name) &key ,@key-args)

@@ -37,11 +37,11 @@
   (bind ((debug-level (normalize-debug-level (getf -options- :debug))))
     (if (zerop debug-level)
         (when (getf -options- :optimize)
-          '((declare (optimize (speed 3) (debug 0) (safety 2)))))
+          '((optimize (speed 3) (debug 0) (safety 2))))
         (progn
           (when (getf -options- :optimize)
             (warn "Ignoring 'O'ptimize flag because 'D'ebug was also specified"))
-          `((declare (optimize (speed 0) (debug ,debug-level))))))))
+          `((optimize (speed 0) (debug ,debug-level)))))))
 
 (defun %function-like-definer (definer-macro-name &key whole options allow-compound-name)
   (bind ((body (nthcdr 2 whole))
@@ -73,7 +73,7 @@
                       (< (getf options :debug) 0))
                  `((declaim (notinline ,name-symbol))))
          (locally
-             ,@outer-declarations
+             (declare ,@outer-declarations)
            ,@(when (getf options :export)
                    `((eval-when (:compile-toplevel :load-toplevel :execute)
                        (export ',name-symbol))))
@@ -94,7 +94,7 @@
          (name (pop body))
          (outer-declarations (function-like-definer-declarations -options-)))
     `(locally
-         ,@outer-declarations
+         (declare ,@outer-declarations)
        ,@(when (getf -options- :export)
                `((export ',name)))
        ,@(iter (for entry :in body)

@@ -190,9 +190,9 @@
                   `(def ,function-definer ,call-with-fn/name ,(if (eq function-definer 'generic)
                                                                   `(thunk ,@generic-args)
                                                                   `(,fn ,@function-args))
-                     ,@(bind ((body `((declare (type function ,fn))
+                     ,@(bind ((body `((declare (type function ,fn)
+                                               ,@(function-like-definer-declarations -options-))
                                       ,@declarations
-                                      ,@(function-like-definer-declarations -options-)
                                       (labels ((-with-macro/body- (,@lexically-transferred-arguments)
                                                  (funcall ,fn ,@lexically-transferred-arguments))
                                                (-body- (&rest args)

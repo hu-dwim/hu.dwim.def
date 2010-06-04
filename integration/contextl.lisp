@@ -14,7 +14,7 @@
          (name (pop body))
          (outer-declarations (function-like-definer-declarations -options-)))
     `(locally
-         ,@outer-declarations
+         (declare ,@outer-declarations)
        ,@(when (getf -options- :export)
                `((export ',name)))
        (contextl:define-layered-function ,name ,@body))))
