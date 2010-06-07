@@ -6,12 +6,14 @@
 
 (in-package :hu.dwim.def)
 
-(def (definer e :available-flags "e") interface (name arguments &optional documentation)
-  (bind ((argument-types (iter (repeat (length arguments))
-                               (collect t))))
+(def (definer e :available-flags "e") interface (name argument-and-types return-type &optional documentation)
+  (bind ((argument-types (iter (for argument-and-type :in argument-and-types)
+                               (collect (or (second (ensure-list argument-and-type)) t)))))
     `(progn
-       (declaim (ftype (function ,argument-types t) ,name))
-       (setf (documentation ',name 'function) ,documentation))))
+       (declaim (ftype (function ,argument-types ,return-type) ,name))
+       (setf (documentation ',name 'function) ,documentation)
+       ,@(when (getf -options- :export)
+               `((export ',name))))))
 
 (def (definer e :available-flags "ioed") function ()
   (function-like-definer defun))
