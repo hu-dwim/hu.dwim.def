@@ -6,7 +6,7 @@
 
 (in-package :hu.dwim.def.documentation)
 
-(def project :hu.dwim.def :path (system-pathname :hu.dwim.def))
+(def project :hu.dwim.def)
 
 (def book user-guide (:title "User guide")
   (chapter (:title "Introduction")
