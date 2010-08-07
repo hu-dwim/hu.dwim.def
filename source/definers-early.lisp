@@ -70,7 +70,7 @@
                       (getf options :inline))
                  `((declaim (inline ,name-symbol))))
          ,@(when (and process-inline?
-                      (< (getf options :debug) 0))
+                      (< 0 (getf options :debug)))
                  `((declaim (notinline ,name-symbol))))
          (locally
              (declare ,@outer-declarations)
