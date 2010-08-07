@@ -9,9 +9,14 @@
 (defpackage :hu.dwim.def.test
   (:use :alexandria
         :anaphora
-        :common-lisp
         :hu.dwim.asdf
+        :hu.dwim.common
         :hu.dwim.def
         :hu.dwim.stefil
         :iterate
-        :metabang-bind))
+        :metabang-bind)
+  (:shadow #:test))
+
+(in-package :hu.dwim.def.test)
+
+(import-all-owned-symbols :hu.dwim.def :hu.dwim.def.test)
