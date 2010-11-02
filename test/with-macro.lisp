@@ -10,7 +10,7 @@
 
 (defsuite* (test/with-macro :in test) ()
   (with-fixture test/with-macro/fixture
-    (run-child-tests)))
+    (-run-child-tests-)))
 
 (def special-variable *with-foo/special*)
 

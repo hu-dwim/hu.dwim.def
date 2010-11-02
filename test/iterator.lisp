@@ -8,7 +8,7 @@
 
 (defsuite* (test/iterator :in test) ()
   (with-fixture test/iterator/fixture
-    (run-child-tests)))
+    (-run-child-tests-)))
 
 (def definer iterator-test (name (iterator-name iterator-args result &optional invocation-count)
                                  &body body)
