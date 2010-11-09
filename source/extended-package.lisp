@@ -13,6 +13,10 @@
 
 (def special-variable *extended-package-definition-hooks* nil)
 
+(def function call-extended-package-definition-hooks (extended-package)
+  (dolist (hook *extended-package-definition-hooks*)
+    (funcall hook extended-package)))
+
 (def class extended-package ()
   ((name :initarg :name :accessor name-of)
    (standard-options :initarg :standard-options :accessor standard-options-of)
@@ -21,6 +25,9 @@
 
 (def print-object extended-package
   (write (name-of -self-)))
+
+(def method (setf readtable-setup-form-of) :after (new-value (extended-package extended-package))
+  (call-extended-package-definition-hooks extended-package))
 
 (def function %define-extended-package (name readtable-setup-form standard-options extended-options)
   (check-type name string)
@@ -33,8 +40,7 @@
                                           :standard-options standard-options
                                           :extended-options extended-options)))
     (setf (find-extended-package name) extended-package)
-   (dolist (hook *extended-package-definition-hooks*)
-     (funcall hook extended-package))))
+    (call-extended-package-definition-hooks extended-package)))
 
 (def (function e) setup-readtable/same-as-package (package-name)
   (bind (#+sbcl (sb-ext:*evaluator-mode* :interpret))
