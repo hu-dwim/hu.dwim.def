@@ -38,7 +38,7 @@
                    (bind ((local (* 2 foo))
                           (*with-foo/special* (+ local bar)))
                      ;; name should not change due to nil, and it should be declared ignorable by its original name
-                     (-with-macro/body- (local nil :ignorable t))))
+                     (-with-macro/body- (local nil :ignorable? t))))
                  (def (with-macro* :macro-only-arguments lexical-var-name) with-foo4 (lexical-var-name foo &key ((:bar bar-local-name)))
                    (bind ((local-var (* 2 foo))
                           (*with-foo/special* (+ local-var bar-local-name)))

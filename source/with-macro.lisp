@@ -162,7 +162,8 @@
                (body-lambda-arguments '()))
           (dolist (el body-invocation-arguments)
             (if (consp el)
-                (bind (((original-name &optional new-name &key ignorable) el))
+                ;; Allegro walker (?) bug triggered by the ignorable key arg: (bind (((original-name &optional new-name &key ignorable) el))
+                (bind (((original-name &optional new-name &key ignorable?) el))
                   (unless new-name
                     (setf new-name `(quote ,original-name)))
                   (when (or (not (symbolp original-name))
@@ -172,7 +173,7 @@
                                           (symbolp (second new-name))
                                           (not (cddr new-name))))))
                     (error "The arguments used to invoke (-with-macro/body- foo1 foo2) may only contain symbols, or (var-name-inside-macro-body var-name-visible-for-user-forms) pairs denoting variables that are \"transferred\" from the lexical scope of the with-macro into the lexical scope of the user provided body forms (implemented by renaming the fn's argument)."))
-                  (when ignorable
+                  (when ignorable?
                     (push new-name ignorable-variables))
                   (push new-name body-lambda-arguments)
                   (push original-name lexically-transferred-arguments))
