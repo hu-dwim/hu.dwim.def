@@ -220,6 +220,7 @@
                        ;; this ,@,@ is broken on ccl due to http://trac.clozure.com/ccl/ticket/6
                        ,@,@funcall-list))))))))))
 
+;; TODO exchange the names with-macro/with-macro* so that the starred version would be the flat one without the extra parens
 (def (definer e :available-flags "eod") with-macro (name args &body body)
   "(def with-macro with-foo (arg1 arg2)
      (let ((*zyz* 42)
