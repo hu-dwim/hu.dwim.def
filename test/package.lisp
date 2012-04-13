@@ -13,7 +13,6 @@
         :hu.dwim.common
         :hu.dwim.def
         :hu.dwim.stefil
-        :iterate
         :metabang-bind)
   (:shadow #:test))
 
