@@ -15,7 +15,7 @@
    (lock)
    (entries)))
 
-;; inline macroexpansion to lower dependencies
+;; inline macroexpansion to lower the number of dependencies
 (PROGN
   (DEFCLASS NAMESPACE NIL
     ((NAME :ACCESSOR NAME-OF :INITARG :NAME :TYPE SYMBOL)
@@ -82,6 +82,7 @@
                  ,@(when (getf -options- :export)
                     `((eval-when (:compile-toplevel :load-toplevel :execute)
                         (export ',-name-))))
+                 ;; FIXME ,@ for a single value to setf?
                  (setf (,',finder-name ',-name-) ,,@definer-forms)))))
        ',namespace-name)))
 

@@ -6,6 +6,8 @@
 
 (in-package :hu.dwim.def)
 
+;; TODO add support for the call-... function to be :inline :possible
+
 (def function compute-arguments-for-function-bridge-macro (args &optional body-invocation-arguments macro-only-arguments)
   (unless args
     (return-from compute-arguments-for-function-bridge-macro

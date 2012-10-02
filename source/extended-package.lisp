@@ -27,6 +27,7 @@
   (write (name-of -self-)))
 
 (def method (setf readtable-setup-form-of) :after (new-value (extended-package extended-package))
+  (declare (ignore new-value))
   (call-extended-package-definition-hooks extended-package))
 
 (def function %define-extended-package (name readtable-setup-form standard-options extended-options)
