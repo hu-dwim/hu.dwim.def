@@ -27,4 +27,4 @@
            `(block nil
               (flet ((,',do/body-name (,,element-var)
                        ,@body))
-                (,',iterator-name #',',do/body-name ,@,@funcall-list))))))))
+                (,',iterator-name #',',do/body-name ,@(append ,@funcall-list)))))))))

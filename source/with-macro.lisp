@@ -219,8 +219,8 @@
                          ,@,(when ignorable-variables
                              ``((declare (ignorable ,,@ignorable-variables))))
                          ,@,with-body)
-                       ;; this ,@,@ is broken on ccl due to http://trac.clozure.com/ccl/ticket/6
-                       ,@,@funcall-list))))))))))
+                       ;; ,@,@ here would be broken on ccl and ecl. see: http://trac.clozure.com/ccl/ticket/6 and http://sourceforge.net/p/ecls/bugs/251/
+                       ,@(append ,@funcall-argument-expression)))))))))))
 
 ;; TODO exchange the names with-macro/with-macro* so that the starred version would be the flat one without the extra parens
 (def (definer e :available-flags "eod") with-macro (name args &body body)
