@@ -31,7 +31,8 @@
            (macro-ignored-args '())
            (function-args (remove-if #'macro-only-argument? requireds))
            (processed-required-args (remove nil (mapcar #'process-required-argument requireds)))
-           (funcall-list (list `(list ,@processed-required-args)))
+           ;; it will be ,@(append ,@x) somewhere deep. it's needed to be able to ,@args if there are &rest args.
+           (funcall-argument-expression (list `(list ,@processed-required-args)))
            (generic-args processed-required-args)
            (to-be-removed-macro-only-keywords '()))
       (when optionals
@@ -46,7 +47,7 @@
                              (gensym (concatenate 'string (string local-var) (string '#:-provided?))))
         :do (progn
               (unless (macro-only-argument? local-var)
-                (appendf funcall-list `((when ,provided? (list ,(maybe-quote local-var)))))
+                (appendf funcall-argument-expression `((when ,provided? (list ,(maybe-quote local-var)))))
                 (appendf function-args (list raw-entry)))
               (appendf macro-args (if rest-variable-name
                                       (list local-var)
@@ -76,7 +77,7 @@
                       (progn
                         (if rest-variable-name
                             (push local-var macro-ignored-args)
-                            (appendf funcall-list `((when ,provided? (list ',keyword ,(maybe-quote name))))))
+                            (appendf funcall-argument-expression `((when ,provided? (list ',keyword ,(maybe-quote name))))))
                         (appendf function-args (list raw-entry))))
                   (appendf macro-args (if rest-variable-name
                                           (list local-var)
@@ -87,12 +88,12 @@
           (appendf function-args '(&allow-other-keys))
           (appendf generic-args '(&allow-other-keys)))
         (when rest-variable-name
-          (appendf funcall-list (if to-be-removed-macro-only-keywords
-                                    `((remove-from-plist ,rest-variable-name ,@to-be-removed-macro-only-keywords))
-                                    `(,rest-variable-name)))))
+          (appendf funcall-argument-expression (if to-be-removed-macro-only-keywords
+                                                   `((remove-from-plist ,rest-variable-name ,@to-be-removed-macro-only-keywords))
+                                                   `(,rest-variable-name)))))
       (values macro-args
               (reverse macro-ignored-args)
-              funcall-list
+              funcall-argument-expression
               function-args
               generic-args))))
 
@@ -184,7 +185,7 @@
                   (push `(quote ,el) body-lambda-arguments))))
           (reversef lexically-transferred-arguments)
           (reversef body-lambda-arguments)
-          (bind (((:values macro-args macro-ignored-args funcall-list function-args generic-args)
+          (bind (((:values macro-args macro-ignored-args funcall-argument-expression function-args generic-args)
                   (compute-arguments-for-function-bridge-macro
                    args body-invocation-arguments
                    (ensure-list (getf -options- :macro-only-arguments)))))
