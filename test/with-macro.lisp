@@ -65,6 +65,72 @@
      (with-fixture test/with-macro/fixture
        ,@body)))
 
+(def with-macro-test test/with-macro/intrastructure/1
+  (macrolet ((test-it ((&rest args) macro-args/expected macro-ignored-args/expected
+                            funcall-list/expected function-args/expected
+                            generic-args/expected)
+               (with-unique-names (macro-args macro-ignored-args funcall-list function-args generic-args)
+                 `(bind (((:values ,macro-args
+                                   ,macro-ignored-args
+                                   ,funcall-list
+                                   ,function-args
+                                   ,generic-args)
+                          (compute-arguments-for-function-bridge-macro ,@args)))
+                    (is (match ,macro-args
+                          (,macro-args/expected t)))
+                    (is (match ,macro-ignored-args
+                          (,macro-ignored-args/expected t)))
+                    (is (match ,funcall-list
+                          (,funcall-list/expected t)))
+                    (is (match ,function-args
+                          (,function-args/expected t)))
+                    (is (match ,generic-args
+                          (,generic-args/expected t)))))))
+    (test-it ('(arg))
+             '(arg)
+             nil
+             '((list arg))
+             '(arg)
+             '(arg))
+    (test-it ('(arg1 &key divisor))
+             (list 'arg1 '&key (list 'divisor _ _))
+             nil
+             (list (list 'list 'arg1) (list 'when _ (list 'list '':divisor 'divisor)))
+             (list 'arg1 '&key 'divisor)
+             (list 'arg1 '&key 'divisor))
+    (test-it ('(arg1 arg2 arg2-new-name) '(arg1 (arg2 arg2-new-name)) '(arg2-new-name))
+             '(arg1 arg2 arg2-new-name)
+             nil
+             '((list arg1 arg2))
+             '(arg1 arg2)
+             '(arg1 arg2))
+    (test-it ('(new-var-name foo &rest args &key ((:bar bar-local-name)) (keyword-defaulting (+ 2 2)) &allow-other-keys)
+               '((local new-var-name))
+               '(new-var-name))
+             '(new-var-name foo &rest args &key bar-local-name keyword-defaulting &allow-other-keys)
+             '(bar-local-name keyword-defaulting)
+             '((list foo) args)
+             '(foo &rest args &key ((:bar bar-local-name)) (keyword-defaulting (+ 2 2)) &allow-other-keys)
+             '(foo &key bar keyword-defaulting &allow-other-keys))
+    (test-it ('(lexical-var-name foo &key ((:bar bar-local-name)))
+               '((local-var lexical-var-name))
+               '(lexical-var-name))
+             ;; should be the following, but uninterned symbols are not equal in OPTIMA::%EQUAL
+             ;; (list 'lexical-var-name 'foo '&key (list 'bar ''#:ignore-me _))
+             (list 'lexical-var-name 'foo '&key (list 'bar _ _))
+             nil
+             (list (list 'list 'foo) (list 'when _ (list 'list '':bar 'bar)))
+             '(foo &key ((:bar bar-local-name)))
+             '(foo &key bar))
+    (test-it ('(lexical-var-name foo &rest args &key ((:bar bar-local-name)))
+               '((local-var lexical-var-name))
+               '(lexical-var-name))
+             (list 'lexical-var-name 'foo '&rest 'args '&key 'bar-local-name)
+             '(bar-local-name)
+             (list (list 'list 'foo) 'args)
+             '(foo &rest args &key ((:bar bar-local-name)))
+             '(foo &key bar))))
+
 (def with-macro-test test/with-macro/1
   (with-foo1 42
     (is (= *with-foo/special* 42))))
