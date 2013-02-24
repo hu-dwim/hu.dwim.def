@@ -13,7 +13,8 @@
         :hu.dwim.common
         :hu.dwim.def
         :hu.dwim.stefil
-        :metabang-bind)
+        :metabang-bind
+        :optima)
   (:shadow #:test))
 
 (in-package :hu.dwim.def.test)
