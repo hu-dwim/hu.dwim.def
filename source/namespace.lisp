@@ -87,13 +87,17 @@
        ',namespace-name)))
 
 (def function %namespace-getter (namespace-name name otherwise otherwise?)
-  (bind ((namespace (ensure-namespace namespace-name)))
-    (with-lock-held-on-namespace namespace
-      (or (gethash name (entries-of namespace))
-          (bind ((error-message (list "Cannot find ~S in namespace ~S" name namespace)))
-            (if otherwise?
-                (handle-otherwise/value otherwise :default-message error-message)
-                (apply 'error error-message)))))))
+  ;; we may get called from the in-package form in extended-package.lisp (if we get recompiled with the integration already loaded)
+  ;; therefore we must be prepared that the namespace itself is missing...
+  (bind ((namespace (ensure-namespace namespace-name :otherwise otherwise)))
+    (if namespace
+        (with-lock-held-on-namespace namespace
+          (or (gethash name (entries-of namespace))
+              (bind ((error-message (list "Cannot find ~S in namespace ~S" name namespace)))
+                (if otherwise?
+                    (handle-otherwise/value otherwise :default-message error-message)
+                    (apply 'error error-message)))))
+        (handle-otherwise/value otherwise))))
 
 (def function %namespace-setter (namespace-name name value)
   (bind ((namespace (ensure-namespace namespace-name)))
@@ -109,10 +113,11 @@
 ;;;;;;
 ;;; namespace accessors
 
-(def function ensure-namespace (namespace)
+(def function ensure-namespace (namespace &key (otherwise :error))
   (etypecase namespace
     (namespace namespace)
-    (symbol (find-namespace namespace))))
+    ;; NOTE this is not the proper way to delegate :otherwise, but the full version is not available here...
+    (symbol (find-namespace namespace :otherwise otherwise))))
 
 (def (function e) iterate-namespace (namespace visitor)
   (bind ((namespace (ensure-namespace namespace)))
