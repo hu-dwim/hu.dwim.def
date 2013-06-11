@@ -28,7 +28,7 @@
   (write (name-of -self-)))
 
 ;;;;;;
-;;; some indirections to be redefined later to lower dependencies
+;;; these are lousy implementations to lower the number of dependencies. they will be redefined later with more functional definitions.
 
 (def with-macro with-lock-held-on-namespace (namespace)
   (declare (ignore namespace))
