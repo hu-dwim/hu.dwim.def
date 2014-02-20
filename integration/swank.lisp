@@ -19,7 +19,7 @@
       (values it t))))
 
 (when (boundp 'swank::*inspector-lookup-hooks*)
-  (pushnew 'definer-lookup-hook swank::*inspector-lookup-hooks*))
+  (pushnew 'definer-lookup-hook (symbol-value 'swank::*inspector-lookup-hooks*)))
 
 (def function notify-swank-about-package-readtable (extended-package)
   (when (symbolp extended-package)
