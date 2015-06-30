@@ -4,6 +4,9 @@
 ;;;
 ;;; See LICENCE for details.
 
+(unless (or #+asdf3 (uiop:version<= "2.31.1" (asdf-version)))
+  (error "You need ASDF >= 2.31.1 to load this system correctly."))
+
 (defsystem :hu.dwim.def
   :defsystem-depends-on (:hu.dwim.asdf)
   :class "hu.dwim.asdf:hu.dwim.system"
