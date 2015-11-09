@@ -30,6 +30,17 @@
   (declare (ignore new-value))
   (call-extended-package-definition-hooks extended-package))
 
+(defun ensure-global-package-nickname (nickname package)
+  (let ((nickname (string nickname))
+        (nicknames (package-nicknames package)))
+    (unless (member nickname nicknames :test 'equal)
+      (pushnew nickname nicknames)
+      (rename-package package package nicknames))
+    nicknames))
+
+(defun supports-local-package-nicknames? ()
+  (featurep :sbcl))
+
 (def function %define-extended-package (name readtable-setup-form standard-options extended-options)
   (check-type name string)
   #+nil ; TODO this is broken because of the usual compile-time/run-time redefinition...
@@ -41,6 +52,13 @@
                                           :standard-options standard-options
                                           :extended-options extended-options)))
     (setf (find-extended-package name) extended-package)
+    (when (not (supports-local-package-nicknames?))
+      (warn "Local package nicknames are not supported on your lisp. The requested nicknames will be installed globally which may lead to name clashes.")
+      (loop
+        :for (nickname target-package) :in (getf extended-options :local-nicknames)
+        :do (progn
+              (format t ";;; installing global package nickname ~S on ~S~%" nickname target-package)
+              (ensure-global-package-nickname nickname target-package))))
     (call-extended-package-definition-hooks extended-package)))
 
 (def (function e) setup-readtable/same-as-package (package-name)
@@ -70,10 +88,20 @@
     (with-standard-definer-options name
       `(progn
          (eval-when (:compile-toplevel :load-toplevel :execute)
-           (%define-extended-package ,(string name)
-                                     ',readtable-setup-form
-                                     ',standard-options
-                                     (list ,@(loop
-                                               :for (option . args) :in extended-options
-                                               :appending (list* `(quote ,option) args)))))
-         (defpackage ,name ,@standard-options)))))
+           (%define-extended-package
+            ,(string name)
+            ',readtable-setup-form
+            ',standard-options
+            (list ,@(loop
+                      :for (option . args) :in extended-options
+                      :appending (list* `(quote ,option) (case option
+                                                           (:local-nicknames
+                                                            (unless (every (curry 'length= 2) args)
+                                                              (error "Malformed :local-nicknames entry in the definition of package ~/hu.dwim.def::print-symbol-with-prefix/: ~S"
+                                                                     name args))
+                                                            (list (list 'quote args)))
+                                                           (t args)))))))
+         (defpackage ,name ,@(append standard-options
+                                     (awhen (and (supports-local-package-nicknames?)
+                                                 (assoc :local-nicknames extended-options))
+                                       (list (list* :local-nicknames (cdr it))))))))))
