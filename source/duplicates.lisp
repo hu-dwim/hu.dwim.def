@@ -66,3 +66,12 @@
    #+(and sbcl sb-thread) `(sb-thread:with-recursive-lock (,lock) ,@body)
    (error "Threading on your lisp is not supported in hu.dwim.def")))
 )
+
+;; from SBCL
+(defun print-symbol-with-prefix (stream symbol &optional colon at)
+  (declare (ignore colon at))
+  ;; Only keywords should be accessible from the keyword package, and
+  ;; keywords are always printed with colons, so this guarantees that the
+  ;; symbol will not be printed without a prefix.
+  (let ((*package* (load-time-value (find-package '#:keyword))))
+    (write symbol :stream stream :escape t)))
