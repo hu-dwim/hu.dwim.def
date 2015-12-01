@@ -18,18 +18,21 @@
            #:find-definer
            #:with-standard-definer-options
            #:function-like-definer-declarations
+
            ;; lexically visible non-hygienic names
+           #:-body-
            #:-child-
            #:-children-
            #:-content-
-           #:-recurse-
-           #:-whole-
-           #:-environment-
            #:-definer-
-           #:-options-
-           #:-name-
+           #:-environment-
            #:-form-
-           #:-body-
-           #:-with-macro/body-
+           #:-name-
+           #:-options-
+           #:-recurse-
+           #:-self-
+           #:-this-function/name-
            #:-visitor-
-           #:-self-))
+           #:-whole-
+           #:-with-macro/body-
+           ))

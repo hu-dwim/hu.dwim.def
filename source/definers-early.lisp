@@ -43,7 +43,10 @@
             (warn "Ignoring 'O'ptimize flag because 'D'ebug was also specified"))
           `((optimize (speed 0) (debug ,debug-level)))))))
 
-(defun %function-like-definer (definer-macro-name &key whole options allow-compound-name method?)
+;; TODO FIXME this is used for stuff like (def layered-method unwalk-form :in lexical-trace ((form application-form)) ...)
+;; with which it's hopelessly clueless, although not wrong, but only accidentally.
+(defun %function-like-definer (definer-macro-name &key whole options allow-compound-name method?
+                                                    simple?)
   (bind ((body (nthcdr 2 whole))
          (name (pop body))
          (name-symbol (if allow-compound-name
@@ -91,13 +94,19 @@
              ,@(when documentation
                      (list documentation))
              ,@declarations
-             ,@body))
+             ;; KLUDGE simple? shouldn't even exist
+             ,@(if simple?
+                   `((symbol-macrolet
+                         ((-this-function/name- ',name))
+                       ,@body))
+                   body)))
          ,@(when (eq (getf options :inline) :possible)
              `((declaim (notinline ,name))))))))
 
-(defmacro function-like-definer (definer-macro-name &key allow-compound-name method?)
+(defmacro function-like-definer (definer-macro-name &key allow-compound-name method? simple?)
   `(%function-like-definer ',definer-macro-name :whole -whole- :options -options-
-                           :allow-compound-name ,allow-compound-name :method? ,method?))
+                           :allow-compound-name ,allow-compound-name :method? ,method?
+                           :simple? ,simple?))
 
 (defun %defmethods-like-definer (definer-macro-name -whole- -options-)
   (bind ((body (nthcdr 2 -whole-))
