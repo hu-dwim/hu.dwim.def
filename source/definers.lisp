@@ -16,10 +16,10 @@
                `((export ',name))))))
 
 (def (definer e :available-flags "ioed") function ()
-  (function-like-definer defun))
+  (function-like-definer defun :allow-compound-name t))
 
 (def (definer e :available-flags "eod") method ()
-  (function-like-definer defmethod))
+  (function-like-definer defmethod :allow-compound-name t :method? t))
 
 (def (definer e :available-flags "eod") methods ()
   (defmethods-like-definer defmethod))

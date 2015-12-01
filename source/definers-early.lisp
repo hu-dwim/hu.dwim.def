@@ -43,7 +43,7 @@
             (warn "Ignoring 'O'ptimize flag because 'D'ebug was also specified"))
           `((optimize (speed 0) (debug ,debug-level)))))))
 
-(defun %function-like-definer (definer-macro-name &key whole options allow-compound-name)
+(defun %function-like-definer (definer-macro-name &key whole options allow-compound-name method?)
   (bind ((body (nthcdr 2 whole))
          (name (pop body))
          (name-symbol (if allow-compound-name
@@ -58,7 +58,12 @@
                              name)
                             (t (error "Don't know how to deal with definition name ~S" name)))
                           name))
+         (qualifier nil)
          (args (pop body)))
+    (when (and method?
+               (keywordp args))
+      (setf qualifier args)
+      (setf args (pop body)))
     (awhen (find-function-definer-option-transformer name-symbol)
       (setf options (funcall it options)))
     (bind (((:values body declarations documentation) (parse-body body :documentation t :whole whole))
@@ -77,7 +82,12 @@
            ,@(when (getf options :export)
                    `((eval-when (:compile-toplevel :load-toplevel :execute)
                        (export ',name-symbol))))
-           (,definer-macro-name ,name ,args
+           (,definer-macro-name
+               ,name
+               ,@(when (and method?
+                            qualifier)
+                   (list qualifier))
+             ,args
              ,@(when documentation
                      (list documentation))
              ,@declarations
@@ -85,9 +95,9 @@
          ,@(when (eq (getf options :inline) :possible)
              `((declaim (notinline ,name))))))))
 
-(defmacro function-like-definer (definer-macro-name &key allow-compound-name)
+(defmacro function-like-definer (definer-macro-name &key allow-compound-name method?)
   `(%function-like-definer ',definer-macro-name :whole -whole- :options -options-
-                           :allow-compound-name ,allow-compound-name))
+                           :allow-compound-name ,allow-compound-name :method? ,method?))
 
 (defun %defmethods-like-definer (definer-macro-name -whole- -options-)
   (bind ((body (nthcdr 2 -whole-))
