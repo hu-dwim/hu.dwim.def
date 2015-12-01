@@ -7,7 +7,7 @@
 (in-package :hu.dwim.def)
 
 (def (definer :available-flags "eod") contextl:layered-method ()
-  (function-like-definer contextl:define-layered-method))
+  (function-like-definer contextl:define-layered-method :allow-compound-name t :method? t))
 
 (def (definer :available-flags "eod") contextl:layered-function ()
   (bind ((body (nthcdr 2 -whole-))

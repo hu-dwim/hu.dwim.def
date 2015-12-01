@@ -64,7 +64,8 @@
          (qualifier nil)
          (args (pop body)))
     (when (and method?
-               (keywordp args))
+               args
+               (symbolp args))
       (setf qualifier args)
       (setf args (pop body)))
     (awhen (find-function-definer-option-transformer name-symbol)
