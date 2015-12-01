@@ -51,7 +51,7 @@
                             ((and (consp name)
                                   (length= 2 name)
                                   (eq (first name) 'setf))
-                             name)
+                             (second name))
                             ((consp name)
                              (first name))
                             ((symbolp name)
@@ -68,10 +68,10 @@
       `(progn
          ,@(when (and process-inline?
                       (getf options :inline))
-                 `((declaim (inline ,name-symbol))))
+                 `((declaim (inline ,name))))
          ,@(when (and process-inline?
                       (< 0 (getf options :debug)))
-                 `((declaim (notinline ,name-symbol))))
+                 `((declaim (notinline ,name))))
          (locally
              (declare ,@outer-declarations)
            ,@(when (getf options :export)
@@ -83,7 +83,7 @@
              ,@declarations
              ,@body))
          ,@(when (eq (getf options :inline) :possible)
-             `((declaim (notinline ,name-symbol))))))))
+             `((declaim (notinline ,name))))))))
 
 (defmacro function-like-definer (definer-macro-name &key allow-compound-name)
   `(%function-like-definer ',definer-macro-name :whole -whole- :options -options-
