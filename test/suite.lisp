@@ -26,11 +26,26 @@
                  (defun foo (bar baz unused)
                    "documentation"
                    (declare (ignore unused))
-                   (+ bar baz))))
+                   (symbol-macrolet ((-this-function/name- 'foo))
+                     (+ bar baz)))))
              (macroexpand-1 '(def (function ioed) foo (bar baz unused)
                               "documentation"
                               (declare (ignore unused))
-                              (+ bar baz))))))
+                              (+ bar baz)))))
+  (is (equal '(progn
+               (declaim (notinline (setf foo)))
+               (locally (declare (optimize (speed 0) (debug 3)))
+                 (eval-when (:compile-toplevel :load-toplevel :execute)
+                   (export 'foo))
+                 (defun (setf foo) (arg)
+                   "documentation"
+                   (declare (ignore unused))
+                   (symbol-macrolet ((-this-function/name- '(setf foo)))
+                     arg))))
+             (macroexpand-1 '(def (function ioed) (setf foo) (arg)
+                              "documentation"
+                              (declare (ignore unused))
+                              arg)))))
 
 (deftest test/method ()
   (is (equal '(progn
@@ -41,11 +56,26 @@
                  (common-lisp:defmethod foo ((bar integer) (baz string) unused)
                    "documentation"
                    (declare (ignore unused))
-                   (+ bar baz))))
+                   (symbol-macrolet ((-this-function/name- 'foo))
+                     (+ bar baz)))))
              (macroexpand-1 '(def (method oed) foo ((bar integer) (baz string) unused)
                               "documentation"
                               (declare (ignore unused))
-                              (+ bar baz))))))
+                              (+ bar baz)))))
+  (is (equal '(progn
+               (declaim (notinline (setf foo)))
+               (locally (declare (optimize (speed 0) (debug 3)))
+                 (eval-when (:compile-toplevel :load-toplevel :execute)
+                   (export 'foo))
+                 (common-lisp:defmethod (setf foo) :before (arg)
+                                        "documentation"
+                                        (declare (ignore unused))
+                                        (symbol-macrolet ((-this-function/name- '(setf foo)))
+                                          this-is-the-body))))
+             (macroexpand-1 '(def (method oed) (setf foo) :before (arg)
+                              "documentation"
+                              (declare (ignore unused))
+                              this-is-the-body)))))
 
 (deftest test/test ()
   (is (equal '(progn
@@ -54,7 +84,8 @@
                  (deftest foo (bar baz unused)
                    "documentation"
                    (declare (ignore unused))
-                   (+ bar baz))))
+                   (symbol-macrolet ((-this-function/name- 'foo))
+                     (+ bar baz)))))
              (macroexpand-1 '(def test foo (bar baz unused)
                               "documentation"
                               (declare (ignore unused))
