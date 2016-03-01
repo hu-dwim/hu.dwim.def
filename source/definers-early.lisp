@@ -49,11 +49,12 @@
                                                     simple?)
   (bind ((body (nthcdr 2 whole))
          (name (pop body))
+         (setf-name? (and (consp name)
+                          (length= 2 name)
+                          (eq (first name) 'setf)))
          (name-symbol (if allow-compound-name
                           (cond
-                            ((and (consp name)
-                                  (length= 2 name)
-                                  (eq (first name) 'setf))
+                            (setf-name?
                              (second name))
                             ((consp name)
                              (first name))
@@ -61,6 +62,9 @@
                              name)
                             (t (error "Don't know how to deal with definition name ~S" name)))
                           name))
+         (function-name (if setf-name?
+                            name
+                            name-symbol))
          (qualifier nil)
          (args (pop body)))
     (when (and method?
@@ -77,10 +81,10 @@
       `(progn
          ,@(when (and process-inline?
                       (getf options :inline))
-                 `((declaim (inline ,name))))
+                 `((declaim (inline ,function-name))))
          ,@(when (and process-inline?
                       (< 0 (getf options :debug)))
-                 `((declaim (notinline ,name))))
+                 `((declaim (notinline ,function-name))))
          (locally
              (declare ,@outer-declarations)
            ,@(when (getf options :export)
@@ -102,7 +106,7 @@
                        ,@body))
                    body)))
          ,@(when (eq (getf options :inline) :possible)
-             `((declaim (notinline ,name))))))))
+             `((declaim (notinline ,function-name))))))))
 
 (defmacro function-like-definer (definer-macro-name &key allow-compound-name method? simple?)
   `(%function-like-definer ',definer-macro-name :whole -whole- :options -options-
