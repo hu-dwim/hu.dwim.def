@@ -53,12 +53,14 @@
                                           :extended-options extended-options)))
     (setf (find-extended-package name) extended-package)
     (when (not (supports-local-package-nicknames?))
-      (warn "Local package nicknames are not supported on your lisp. The requested nicknames will be installed globally which may lead to name clashes.")
-      (loop
-        :for (nickname target-package) :in (getf extended-options :local-nicknames)
-        :do (progn
-              (format t ";;; installing global package nickname ~S on ~S~%" nickname target-package)
-              (ensure-global-package-nickname nickname target-package))))
+      (let ((nicknames (getf extended-options :local-nicknames)))
+        (warn "Local package nicknames are not supported on your lisp. The requested nicknames of package ~S (~S) will be installed globally which may lead to name clashes."
+              name nicknames)
+        (loop
+          :for (nickname target-package) :in nicknames
+          :do (progn
+                (format t ";;; Installing global package nickname ~S on package ~S~%" nickname target-package)
+                (ensure-global-package-nickname nickname target-package)))))
     (call-extended-package-definition-hooks extended-package)))
 
 (def (function e) setup-readtable/same-as-package (package-name)
