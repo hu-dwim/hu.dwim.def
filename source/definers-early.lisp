@@ -25,8 +25,7 @@
 (defun transform-function-definer-options (options)
   (bind ((debug-level (normalize-debug-level
                        (getf options :debug (max #+sbcl (sb-c::policy-quality sb-c::*policy* 'debug)
-                                                 (if *load-as-production?*
-                                                     0
+                                                 (or (production-only 0)
                                                      1))))))
     (when (> debug-level 0)
       (remove-from-plistf options :inline :optimize))
