@@ -142,7 +142,7 @@
 
 (def function expand-with-macro (name args body -options- flat? must-have-args?)
   (flet ((simple-lambda-list? (args)
-           (bind (((:values nil optionals rest keywords allow-other-keys?) (parse-ordinary-lambda-list args)))
+           (bind (((:values _ optionals rest keywords allow-other-keys?) (parse-ordinary-lambda-list args)))
              (and (not rest)
                   (not optionals)
                   (not keywords)
