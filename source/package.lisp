@@ -31,7 +31,7 @@
            #:-options-
            #:-recurse-
            #:-self-
-           #:-this-function/name-
+           #:-this-definition/name-
            #:-visitor-
            #:-whole-
            #:-with-macro/body-

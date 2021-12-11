@@ -98,10 +98,14 @@
              ,@(when documentation
                      (list documentation))
              ,@declarations
-             ;; KLUDGE simple? shouldn't even exist
+             ;; SIMPLE? means that we are dealing with a
+             ;; DEFUN/DEFMACRO like strucutre, as opposed to e.g. a
+             ;; DEFINE-LAYERED-METHOD that heavily parses its
+             ;; arguments, and we don't know where the function body
+             ;; begins.
              ,@(if simple?
                    `((symbol-macrolet
-                         ((-this-function/name- ',name))
+                         ((-this-definition/name- ',name))
                        ,@body))
                    body)))
          ,@(when (eq (getf options :inline) :possible)

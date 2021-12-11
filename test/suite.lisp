@@ -26,7 +26,7 @@
                  (defun foo (bar baz unused)
                    "documentation"
                    (declare (ignore unused))
-                   (symbol-macrolet ((-this-function/name- 'foo))
+                   (symbol-macrolet ((-this-definition/name- 'foo))
                      (+ bar baz)))))
              (macroexpand-1 '(def (function ioed) foo (bar baz unused)
                               "documentation"
@@ -40,7 +40,7 @@
                  (defun (setf foo) (arg)
                    "documentation"
                    (declare (ignore unused))
-                   (symbol-macrolet ((-this-function/name- '(setf foo)))
+                   (symbol-macrolet ((-this-definition/name- '(setf foo)))
                      arg))))
              (macroexpand-1 '(def (function ioed) (setf foo) (arg)
                               "documentation"
@@ -56,7 +56,7 @@
                  (common-lisp:defmethod foo ((bar integer) (baz string) unused)
                    "documentation"
                    (declare (ignore unused))
-                   (symbol-macrolet ((-this-function/name- 'foo))
+                   (symbol-macrolet ((-this-definition/name- 'foo))
                      (+ bar baz)))))
              (macroexpand-1 '(def (method oed) foo ((bar integer) (baz string) unused)
                               "documentation"
@@ -70,7 +70,7 @@
                  (common-lisp:defmethod (setf foo) :before (arg)
                                         "documentation"
                                         (declare (ignore unused))
-                                        (symbol-macrolet ((-this-function/name- '(setf foo)))
+                                        (symbol-macrolet ((-this-definition/name- '(setf foo)))
                                           this-is-the-body))))
              (macroexpand-1 '(def (method oed) (setf foo) :before (arg)
                               "documentation"
@@ -84,7 +84,7 @@
                  (deftest foo (bar baz unused)
                    "documentation"
                    (declare (ignore unused))
-                   (symbol-macrolet ((-this-function/name- 'foo))
+                   (symbol-macrolet ((-this-definition/name- 'foo))
                      (+ bar baz)))))
              (macroexpand-1 '(def test foo (bar baz unused)
                               "documentation"

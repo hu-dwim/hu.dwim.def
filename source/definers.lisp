@@ -22,13 +22,14 @@
   (function-like-definer defmethod :allow-compound-name t :method? t :simple? t))
 
 (def (definer e :available-flags "eod") methods ()
+  ;; TODO add -this-definition/name-
   (defmethods-like-definer defmethod))
 
 (def (definer e :available-flags "eod") macro ()
-  (function-like-definer defmacro))
+  (function-like-definer defmacro :simple? t))
 
 (def (definer e :available-flags "eod") compiler-macro ()
-  (function-like-definer define-compiler-macro))
+  (function-like-definer define-compiler-macro :simple? t))
 
 (def (definer e :available-flags "e") symbol-macro (name expansion &optional documentation)
   (check-type name symbol)
@@ -38,6 +39,7 @@
        (setf (documentation ',name 'variable) ,documentation))))
 
 (def (definer e :available-flags "eod") generic ()
+  ;; TODO add -this-definition/name-
   (bind ((body (nthcdr 2 -whole-))
          (name (pop body))
          (outer-declarations (function-like-definer-declarations -options-)))
