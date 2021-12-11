@@ -15,7 +15,8 @@
         :hu.dwim.stefil
         :metabang-bind
         :optima)
-  (:shadow #:test))
+  (:shadow #:test
+           #:transform-function-definer-options))
 
 (in-package :hu.dwim.def/test)
 

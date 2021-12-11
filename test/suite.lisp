@@ -9,7 +9,7 @@
 (defsuite* (test :in root-suite))
 
 ;; we need to define a local transformer, because the default one depends on the value
-;; of the environment (*LOAD-AS-PRODUCTION?*, and declaimed debug level).
+;; of the external environment (*LOAD-AS-PRODUCTION?*, and declaimed debug level).
 (defun transform-function-definer-options (options)
   (bind ((debug-level (normalize-debug-level (getf options :debug 0))))
     (when (> debug-level 0)
