@@ -4,7 +4,7 @@
 ;;;
 ;;; See LICENCE for details.
 
-(in-package :hu.dwim.def.test)
+(in-package :hu.dwim.def/test)
 
 (defsuite* (test :in root-suite))
 

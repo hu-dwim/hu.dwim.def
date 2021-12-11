@@ -4,7 +4,7 @@
 ;;;
 ;;; See LICENCE for details.
 
-(in-package :hu.dwim.def.test)
+(in-package :hu.dwim.def/test)
 
 ;; many of these are broken on ccl due to http://trac.clozure.com/ccl/ticket/6
 

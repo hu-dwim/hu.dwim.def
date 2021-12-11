@@ -4,7 +4,7 @@
 ;;;
 ;;; See LICENCE for details.
 
-(in-package :hu.dwim.def.documentation)
+(in-package :hu.dwim.def/documentation)
 
 (def project :hu.dwim.def)
 

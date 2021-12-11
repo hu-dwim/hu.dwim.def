@@ -6,7 +6,7 @@
 
 (in-package :hu.dwim.def)
 
-(def package :hu.dwim.def.documentation
+(def package :hu.dwim.def/documentation
   (:use :hu.dwim.asdf
         :hu.dwim.common
         :hu.dwim.def

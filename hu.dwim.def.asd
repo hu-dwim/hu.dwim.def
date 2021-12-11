@@ -25,3 +25,35 @@
                              (:file "namespace" :depends-on ("definers" "with-macro"))
                              (:file "package")
                              (:file "with-macro" :depends-on ("definers"))))))
+
+(defsystem :hu.dwim.def/namespace
+  :defsystem-depends-on (:hu.dwim.asdf)
+  :class "hu.dwim.asdf:hu.dwim.system"
+  :description "Thread safe namespace (global hashtable) definer."
+  :depends-on (:bordeaux-threads
+               :hu.dwim.def
+               :hu.dwim.util
+               :trivial-garbage)
+  :components ((:module "source"
+                :components ((:file "namespace-late")))))
+
+(defsystem :hu.dwim.def/test
+  :defsystem-depends-on (:hu.dwim.asdf)
+  :class "hu.dwim.asdf:hu.dwim.test-system"
+  :depends-on (:hu.dwim.common
+               :hu.dwim.stefil+hu.dwim.def
+               :optima)
+  :components ((:module "test"
+                :components ((:file "iterator" :depends-on ("suite"))
+                             (:file "package")
+                             (:file "suite" :depends-on ("package"))
+                             (:file "with-macro" :depends-on ("suite"))))))
+
+(defsystem :hu.dwim.def/documentation
+  :defsystem-depends-on (:hu.dwim.asdf)
+  :class "hu.dwim.asdf:hu.dwim.documentation-system"
+  :depends-on (:hu.dwim.def/test
+               :hu.dwim.presentation)
+  :components ((:module "documentation"
+                :components ((:file "def" :depends-on ("package"))
+                             (:file "package")))))

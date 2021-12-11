@@ -6,7 +6,7 @@
 
 (in-package :common-lisp-user)
 
-(defpackage :hu.dwim.def.test
+(defpackage :hu.dwim.def/test
   (:use :alexandria
         :anaphora
         :hu.dwim.asdf
@@ -17,6 +17,6 @@
         :optima)
   (:shadow #:test))
 
-(in-package :hu.dwim.def.test)
+(in-package :hu.dwim.def/test)
 
-(import-all-owned-symbols :hu.dwim.def :hu.dwim.def.test)
+(import-all-owned-symbols :hu.dwim.def :hu.dwim.def/test)

@@ -50,7 +50,7 @@
   (declare (ignore weakness))
   (make-hash-table :test test-function))
 
-;; namespace is only exported later when it's loaded through hu.dwim.def.namespace.asd and after it was made thread-safe.
+;; namespace is only exported later when it's loaded through hu.dwim.def/namespace.asd and after it was made thread-safe.
 (def (definer :available-flags "e") namespace (namespace-name &optional definer-args &body definer-forms)
   (bind ((finder-name   (getf -options- :finder-name (symbolicate '#:find- namespace-name)))
          (test-function (getf -options- :test '#'eq))
